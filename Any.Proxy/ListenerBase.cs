@@ -129,8 +129,10 @@ namespace Any.Proxy
         ///<param name="client">The client to add to the client list.</param>
         protected void AddClient(ClientBase client)
         {
-            if (Clients.Contains(client))
+            if (!Clients.Contains(client))
+            {
                 Clients.AddLast(client);
+            }
         }
         ///<summary>Removes the specified Client from the client list.</summary>
         ///<param name="client">The client to remove from the client list.</param>
