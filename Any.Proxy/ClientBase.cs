@@ -9,8 +9,8 @@ namespace Any.Proxy
         private readonly Action<ClientBase> _destroyer;
         private Socket _clientSocket;
         private Socket _destinationSocket;
-        private readonly byte[] _buffer = new byte[4096];
-        private readonly byte[] _remoteBuffer = new byte[1024];
+        private readonly byte[] _buffer = new byte[40960];
+        private readonly byte[] _remoteBuffer = new byte[10240];
 
         protected ClientBase(Socket clientSocket, Action<ClientBase> destroyer)
         {
