@@ -192,7 +192,7 @@ namespace Any.Proxy.Http
             string brs = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><head><title>400 Bad Request</title></head><body><div align=\"center\"><table border=\"0\" cellspacing=\"3\" cellpadding=\"3\" bgcolor=\"#C0C0C0\"><tr><td><table border=\"0\" width=\"500\" cellspacing=\"3\" cellpadding=\"3\"><tr><td bgcolor=\"#B2B2B2\"><p align=\"center\"><strong><font size=\"2\" face=\"Verdana\">400 Bad Request</font></strong></p></td></tr><tr><td bgcolor=\"#D1D1D1\"><font size=\"2\" face=\"Verdana\"> The proxy server could not understand the HTTP request!<br><br> Please contact your network administrator about this problem.</font></td></tr></table></center></td></tr></table></div></body></html>";
             try
             {
-                ClientSocket.BeginSend(Encoding.ASCII.GetBytes(brs), 0, brs.Length, SocketFlags.None, OnErrorSent, ClientSocket);
+                ClientSocket.BeginSend(Encoding.UTF8.GetBytes(brs), 0, brs.Length, SocketFlags.None, OnErrorSent, ClientSocket);
             }
             catch
             {
@@ -257,7 +257,7 @@ namespace Any.Proxy.Http
                 Dispose();
                 return;
             }
-            HttpQuery += Encoding.ASCII.GetString(Buffer, 0, Ret);
+            HttpQuery += Encoding.UTF8.GetString(Buffer, 0, Ret);
             //if received data is valid HTTP request...
             if (IsValidQuery(HttpQuery))
             {
@@ -296,12 +296,12 @@ namespace Any.Proxy.Http
                 if (_httpRequestType.ToUpper().Equals("CONNECT"))
                 { //HTTPS
                     rq = _httpVersion + " 200 Connection established\r\nProxy-Agent: Mentalis Proxy Server\r\n\r\n";
-                    ClientSocket.BeginSend(Encoding.ASCII.GetBytes(rq), 0, rq.Length, SocketFlags.None, OnOkSent, ClientSocket);
+                    ClientSocket.BeginSend(Encoding.UTF8.GetBytes(rq), 0, rq.Length, SocketFlags.None, OnOkSent, ClientSocket);
                 }
                 else
                 { //Normal HTTP
                     rq = RebuildQuery();
-                    DestinationSocket.BeginSend(Encoding.ASCII.GetBytes(rq), 0, rq.Length, SocketFlags.None, OnQuerySent, DestinationSocket);
+                    DestinationSocket.BeginSend(Encoding.UTF8.GetBytes(rq), 0, rq.Length, SocketFlags.None, OnQuerySent, DestinationSocket);
                 }
             }
             catch
