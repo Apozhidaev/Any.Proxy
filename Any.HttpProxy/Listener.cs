@@ -13,7 +13,7 @@ namespace Any.HttpProxy
 
         public Listener()
         {
-            _listener = new TcpListener(IPAddress.Parse("127.0.0.1"), 50000);
+            _listener = new TcpListener(IPAddress.Any, 50000);
         }
 
         public async void Start()
@@ -21,7 +21,15 @@ namespace Any.HttpProxy
             _listener.Start();
             while (true)
             {
-                await Accept(await _listener.AcceptSocketAsync());
+                try
+                {
+                    await Accept(await _listener.AcceptSocketAsync());
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+
             }
         }
 
@@ -35,11 +43,12 @@ namespace Any.HttpProxy
             await Task.Yield();
             using (myClient)
             {
-                // соединяемся
-                if (myClient.Connected)
+                try
                 {
-                    try
+                    // соединяемся
+                    if (myClient.Connected)
                     {
+
                         // получаем тело запроса
                         byte[] httpRequest = ReadToEnd(myClient);
                         // ищем хост и порт
@@ -75,13 +84,13 @@ namespace Any.HttpProxy
                                 }
                             }
                         }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e.Message);
+
                     }
                 }
-
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
             }
         }
 
