@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
@@ -15,7 +14,7 @@ namespace Any.Proxy
             _socket = socket;
         }
 
-        #region RelayTo
+        #region Write
 
         public Task WriteAsync(byte[] bytes)
         {
