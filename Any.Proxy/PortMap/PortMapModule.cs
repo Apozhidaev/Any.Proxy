@@ -6,17 +6,15 @@ using System.Threading.Tasks;
 namespace Any.Proxy.PortMap
 {
 
-    public class PortMapListener : IDisposable
+    public class PortMapModule : IProxyModule
     {
-        private IPEndPoint _fromPoint;
-        private IPEndPoint _toPoint;
-        private TcpListener _listener;
+        private readonly IPEndPoint _toPoint;
+        private readonly TcpListener _listener;
 
-        public PortMapListener(IPEndPoint fromPoint, IPEndPoint toPoint)
+        public PortMapModule(IPEndPoint fromPoint, IPEndPoint toPoint)
         {
-            _fromPoint = fromPoint;
             _toPoint = toPoint;
-            _listener = new TcpListener(_fromPoint);
+            _listener = new TcpListener(fromPoint);
         }
 
         public async void Start()

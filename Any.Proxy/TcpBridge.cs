@@ -21,6 +21,7 @@ namespace Any.Proxy
             _socket = socket;
             _remotePoint = remotePoint;
             _remoteSocket = new Socket(remotePoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            //_remoteSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
         }
 
         public void Dispose()

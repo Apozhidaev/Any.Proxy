@@ -52,14 +52,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Https\ClientBase.cs" />
+    <Compile Include="Https\HttpClient.cs" />
+    <Compile Include="Https\HttpsModule.cs" />
+    <Compile Include="Https\ListenerBase.cs" />
+    <Compile Include="Http\HttpModule.cs" />
+    <Compile Include="IProxyModule.cs" />
     <Compile Include="PortMap\Configuration\PortMapElement.cs" />
     <Compile Include="PortMap\Configuration\PortMapElementCollection.cs" />
     <Compile Include="PortMap\Configuration\ProxySection.cs" />
-    <Compile Include="PortMap\PortMapListener.cs" />
+    <Compile Include="PortMap\PortMapModule.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
     <Compile Include="TcpBridge.cs" />
+    <Compile Include="TcpWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config">

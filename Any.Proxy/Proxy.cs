@@ -12,7 +12,7 @@ namespace Any.Proxy
 {
     public class Proxy
     {
-        private readonly Dictionary<string, PortMapListener> _listeners = new Dictionary<string, PortMapListener>();
+        private readonly Dictionary<string, IProxyModule> _listeners = new Dictionary<string, IProxyModule>();
 
         public void Start()
         {
@@ -21,7 +21,7 @@ namespace Any.Proxy
 
             foreach (var listener in configuration.PortMap.Cast<PortMapElement>())
             {
-                _listeners.Add(String.Format("PortMap-{0}", listener.Name), new PortMapListener(new IPEndPoint(GetIP(listener.FromHost), listener.FromPort),
+                _listeners.Add(String.Format("PortMap-{0}", listener.Name), new PortMapModule(new IPEndPoint(GetIP(listener.FromHost), listener.FromPort),
                     new IPEndPoint(GetIP(listener.ToHost), listener.ToPort)));
             }
 
