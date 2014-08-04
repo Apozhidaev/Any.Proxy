@@ -47,46 +47,24 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="Topshelf">
+      <HintPath>..\Components\Topshelf-3.0.2\Topshelf.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientBase.cs" />
-    <Compile Include="Configuration\HttpElement.cs" />
-    <Compile Include="Configuration\HttpElementCollection.cs" />
     <Compile Include="Configuration\PortMapElement.cs" />
     <Compile Include="Configuration\PortMapElementCollection.cs" />
     <Compile Include="Configuration\ProxySection.cs" />
-    <Compile Include="Http\HttpClient.cs" />
-    <Compile Include="Http\HttpListener.cs" />
-    <Compile Include="ListenerBase.cs" />
-    <Compile Include="Old\AuthBase.cs" />
-    <Compile Include="Old\AuthenticationList.cs" />
-    <Compile Include="Old\AuthNone.cs" />
-    <Compile Include="Old\AuthUserPass.cs" />
-    <Compile Include="Old\Client.cs" />
-    <Compile Include="Old\ConsoleAttributes.cs" />
-    <Compile Include="Old\FtpClient.cs" />
-    <Compile Include="Old\FtpDataConnection.cs" />
-    <Compile Include="Old\FtpListener.cs" />
-    <Compile Include="Old\HttpClient.cs" />
-    <Compile Include="Old\HttpListener.cs" />
-    <Compile Include="Old\Listener.cs" />
-    <Compile Include="Old\PortMapClient.cs" />
-    <Compile Include="Old\PortMapListener.cs" />
-    <Compile Include="Old\Proxy.cs" />
-    <Compile Include="Old\ProxyConfig.cs" />
-    <Compile Include="Old\Socks4Handler.cs" />
-    <Compile Include="Old\Socks5Handler.cs" />
-    <Compile Include="Old\SocksClient.cs" />
-    <Compile Include="Old\SocksHandler.cs" />
-    <Compile Include="Old\SocksListener.cs" />
-    <Compile Include="PortMap\PortMapClient.cs" />
     <Compile Include="PortMap\PortMapListener.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
+    <Compile Include="TcpBridge.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="app.config" />
+    <None Include="app.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

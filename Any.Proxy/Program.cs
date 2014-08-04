@@ -1,5 +1,7 @@
 ﻿using Any.Logs;
 using Any.Logs.Loggers;
+using System;
+using Topshelf;
 
 namespace Any.Proxy
 {
@@ -7,8 +9,22 @@ namespace Any.Proxy
     {
         public static void Main()
         {
-            Log.Out.InitializeDefault();
-            new Proxy().Start();
+            HostFactory.Run(x =>
+            {
+                x.Service<Proxy>(s =>
+                {
+                    s.ConstructUsing(name => new Proxy());
+                    s.WhenStarted(tc => tc.Start());
+                    s.WhenStopped(tc => tc.Stop());
+                });
+                x.RunAsLocalSystem();
+
+                x.SetDescription("Any Proxy");
+                x.SetDisplayName("AnyProxy");
+                x.SetServiceName("AnyProxy");
+            });
+
+            Console.ReadKey();
         } 
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Any.Proxy.Configuration
 {
-    [ConfigurationCollection(typeof(HttpElement), AddItemName = "listener",
+    [ConfigurationCollection(typeof(PortMapElement), AddItemName = "listener",
         CollectionType = ConfigurationElementCollectionType.BasicMap)]
     public class PortMapElementCollection : ConfigurationElementCollection
     {
