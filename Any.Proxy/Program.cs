@@ -1,6 +1,4 @@
-﻿using Any.Logs;
-using Any.Logs.Loggers;
-using System;
+﻿using System;
 using Topshelf;
 
 namespace Any.Proxy

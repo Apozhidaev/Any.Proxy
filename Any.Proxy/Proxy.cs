@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Net;
-using Any.Proxy.Configuration;
 using Any.Proxy.PortMap;
 using Any.Logs;
 using Any.Logs.Loggers;
+using Any.Proxy.PortMap.Configuration;
 
 namespace Any.Proxy
 {

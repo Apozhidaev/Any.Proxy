@@ -1,23 +1,20 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Any.Proxy
 {
     public class TcpBridge : IDisposable
     {
-        private Socket _socket;
-        private Socket _remoteSocket;
-        private IPEndPoint _remotePoint;
+        private readonly Socket _socket;
+        private readonly Socket _remoteSocket;
+        private readonly IPEndPoint _remotePoint;
         private readonly byte[] _buffer = new byte[40960];
         private readonly byte[] _remoteBuffer = new byte[10240];
-        private TaskCompletionSource<int> _tcsHandshake = new TaskCompletionSource<int>();
-        private TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
-        private TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
+        private readonly TaskCompletionSource<int> _tcsHandshake = new TaskCompletionSource<int>();
+        private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
+        private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
 
         public TcpBridge(Socket socket, IPEndPoint remotePoint)
         {
@@ -26,11 +23,35 @@ namespace Any.Proxy
             _remoteSocket = new Socket(remotePoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         }
 
+        public void Dispose()
+        {
+            _remoteSocket.Dispose();
+        }
+
+        #region Handshake
+
         public Task HandshakeAsync()
         {
             _remoteSocket.BeginConnect(_remotePoint, OnConnected, _remoteSocket);
             return _tcsHandshake.Task;
         }
+
+        private void OnConnected(IAsyncResult ar)
+        {
+            try
+            {
+                _remoteSocket.EndConnect(ar);
+                _tcsHandshake.SetResult(0);
+            }
+            catch (Exception e)
+            {
+                _tcsHandshake.SetException(e);
+            }
+        }
+
+        #endregion
+
+        #region Relay
 
         public Task RelayAsync()
         {
@@ -42,25 +63,9 @@ namespace Any.Proxy
             Task.WaitAll(RelayToAsync(), RelayFromAsync());
         }
 
-        public void Dispose()
-        {
-            _remoteSocket.Dispose();
-        }
+        #endregion
 
-        private void OnConnected(IAsyncResult ar)
-        {
-            try
-            {
-                _remoteSocket.EndConnect(ar);
-                _tcsHandshake.SetResult(0);
-            }
-            catch(Exception e)
-            {
-                _tcsHandshake.SetException(e);
-            }
-        }
-
-        #region To
+        #region RelayTo
 
         public Task RelayToAsync()
         {
@@ -106,7 +111,7 @@ namespace Any.Proxy
 
         #endregion
 
-        #region From
+        #region RelayFrom
 
         public Task RelayFromAsync()
         {

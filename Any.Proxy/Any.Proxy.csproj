@@ -52,9 +52,9 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Configuration\PortMapElement.cs" />
-    <Compile Include="Configuration\PortMapElementCollection.cs" />
-    <Compile Include="Configuration\ProxySection.cs" />
+    <Compile Include="PortMap\Configuration\PortMapElement.cs" />
+    <Compile Include="PortMap\Configuration\PortMapElementCollection.cs" />
+    <Compile Include="PortMap\Configuration\ProxySection.cs" />
     <Compile Include="PortMap\PortMapListener.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
