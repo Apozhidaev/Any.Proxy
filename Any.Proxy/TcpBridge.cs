@@ -16,12 +16,15 @@ namespace Any.Proxy
         private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
         private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
 
-        public TcpBridge(Socket socket, IPEndPoint remotePoint)
+        public TcpBridge(Socket socket, IPEndPoint remotePoint, bool isKeepAlive = false)
         {
             _socket = socket;
             _remotePoint = remotePoint;
             _remoteSocket = new Socket(remotePoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            //_remoteSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
+            if (isKeepAlive)
+            {
+                _remoteSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
+            }
         }
 
         public void Dispose()
@@ -106,6 +109,7 @@ namespace Any.Proxy
             catch (Exception e)
             {
                 _tcsRelayTo.SetException(e);
+                return;
             }
             _tcsRelayTo.SetResult(0);
         }
@@ -152,6 +156,7 @@ namespace Any.Proxy
             catch (Exception e)
             {
                 _tcsRelayFrom.SetException(e);
+                return;
             }
             _tcsRelayFrom.SetResult(0);
         }

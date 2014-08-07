@@ -52,10 +52,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Https\ClientBase.cs" />
-    <Compile Include="Https\HttpClient.cs" />
+    <Compile Include="Https\HttpsClient.cs" />
     <Compile Include="Https\HttpsModule.cs" />
-    <Compile Include="Https\ListenerBase.cs" />
     <Compile Include="Http\HttpModule.cs" />
     <Compile Include="IProxyModule.cs" />
     <Compile Include="HttpParser.cs" />

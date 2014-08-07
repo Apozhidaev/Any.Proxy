@@ -25,15 +25,15 @@ namespace Any.Proxy
             //    x.SetServiceName("AnyProxy");
             //});
 
-            //var m = new HttpsModule(IPAddress.Any, 50000);
-            //m.Start();
-            //Console.ReadKey();
-            //m.Dispose();
-
-            var m = new HttpModule();
+            var m = new HttpsModule(IPAddress.Any, 50000);
             m.Start();
             Console.ReadKey();
             m.Dispose();
+
+            //var m = new HttpModule();
+            //m.Start();
+            //Console.ReadKey();
+            //m.Dispose();
         } 
     }
 }
