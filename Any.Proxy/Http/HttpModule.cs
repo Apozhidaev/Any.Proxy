@@ -11,9 +11,9 @@ namespace Any.Proxy.Http
     {
         private readonly TcpListener _listener;
 
-        public HttpModule()
+        public HttpModule(IPAddress address, int port)
         {
-            _listener = new TcpListener(IPAddress.Any, 50000);
+            _listener = new TcpListener(address, port);
         }
 
         public async void Start()
@@ -45,7 +45,7 @@ namespace Any.Proxy.Http
                     {
 
                         // получаем тело запроса
-                        byte[] httpRequest = ReadToEnd(myClient, 10000);
+                        byte[] httpRequest = ReadToEnd(myClient, 100);
                         // ищем хост и порт
                         Regex myReg = new Regex(@"Host: (((?<host>.+?):(?<port>\d+?))|(?<host>.+?))\s+", RegexOptions.Multiline | RegexOptions.IgnoreCase);
                         Match m = myReg.Match(System.Text.Encoding.ASCII.GetString(httpRequest));
