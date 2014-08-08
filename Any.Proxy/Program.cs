@@ -27,14 +27,14 @@ namespace Any.Proxy
             //    x.SetServiceName("AnyProxy");
             //});
 
-            //var ms = new HttpsModule(IPAddress.Any, 51111);
-            //ms.Start();
+            var ms = new HttpsClientModule(IPAddress.Any, 51111);
+            ms.Start();
 
             var m = new HttpClientModule(IPAddress.Any, 50000);
             m.Start();
             Console.ReadKey();
             m.Dispose();
-            //ms.Dispose();
+            ms.Dispose();
         } 
     }
 }

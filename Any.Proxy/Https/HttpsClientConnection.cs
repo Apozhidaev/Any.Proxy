@@ -1,16 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Specialized;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using Any.Logs;
-using Any.Logs.Extentions;
 
 namespace Any.Proxy.Https
 {
-    public class HttpsClient : IDisposable
+    public class HttpsClientConnection : IDisposable
     {
-        private readonly Action<HttpsClient> _destroyer;
+        private readonly Action<HttpsClientConnection> _destroyer;
         private Socket _clientSocket;
         private readonly byte[] _buffer = new byte[40960];
         private string _httpQuery = "";
@@ -18,9 +15,9 @@ namespace Any.Proxy.Https
         private StringDictionary _headerFields;
         private string _httpVersion;
         private string _httpRequestType;
-        private TcpBridge _tcpBridge;
+        private HttpBridge _tcpBridge;
 
-        public HttpsClient(Socket clientSocket, Action<HttpsClient> destroyer) 
+        public HttpsClientConnection(Socket clientSocket, Action<HttpsClientConnection> destroyer) 
         {
             _httpRequestType = "";
             _httpVersion = "";
@@ -136,9 +133,9 @@ namespace Any.Proxy.Https
             }
             try
             {
-                var DestinationEndPoint = new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port);
+                //var DestinationEndPoint = new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port);
 
-                _tcpBridge = new TcpBridge(_clientSocket, DestinationEndPoint, _headerFields.ContainsKey("Proxy-Connection") && _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
+                _tcpBridge = new HttpBridge(_clientSocket, Host, Port, _headerFields.ContainsKey("Proxy-Connection") && _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
                 _tcpBridge.HandshakeAsync().ContinueWith(_ =>
                 {
                     string rq;
@@ -237,7 +234,6 @@ namespace Any.Proxy.Https
             const string brs = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><head><title>400 Bad Request</title></head><body><div align=\"center\"><table border=\"0\" cellspacing=\"3\" cellpadding=\"3\" bgcolor=\"#C0C0C0\"><tr><td><table border=\"0\" width=\"500\" cellspacing=\"3\" cellpadding=\"3\"><tr><td bgcolor=\"#B2B2B2\"><p align=\"center\"><strong><font size=\"2\" face=\"Verdana\">400 Bad Request</font></strong></p></td></tr><tr><td bgcolor=\"#D1D1D1\"><font size=\"2\" face=\"Verdana\"> The proxy server could not understand the HTTP request!<br><br> Please contact your network administrator about this problem.</font></td></tr></table></center></td></tr></table></div></body></html>";
             new TcpWriter(_clientSocket).WriteAsync(Encoding.UTF8.GetBytes(brs)).ContinueWith(_ => Dispose());
         }
-        
+         
     }
-
 }

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Web.Http;
-using Any.Proxy.Service.Models;
-using Newtonsoft.Json.Schema;
 
 namespace Any.Proxy.Service.Controllers
 {
@@ -17,7 +12,7 @@ namespace Any.Proxy.Service.Controllers
     {
         [HttpPost]
         [Route("r")]
-        public HttpResponseMessage GetResource()
+        public HttpResponseMessage Receive()
         {
             var httpRequest = Request.Content.ReadAsByteArrayAsync().Result;
             // ищем хост и порт

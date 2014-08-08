@@ -1,21 +1,21 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
 namespace Any.Proxy.Https
 {
-    public class HttpsModule :  IProxyModule
+    public class HttpsClientModule : IProxyModule
     {
-        private readonly int _port;
+         private readonly int _port;
         private readonly IPAddress _address;
         private Socket _listenSocket;
         public bool _isDisposed;
-        private readonly LinkedList<HttpsConnection> _connections = new LinkedList<HttpsConnection>();
+        private readonly LinkedList<HttpsClientConnection> _connections = new LinkedList<HttpsClientConnection>();
 
-        public HttpsModule(int Port) : this(IPAddress.Any, Port) { }
+        public HttpsClientModule(int Port) : this(IPAddress.Any, Port) { }
 
-        public HttpsModule(IPAddress address, int port)
+        public HttpsClientModule(IPAddress address, int port)
         {
             _isDisposed = false;
             _port = port;
@@ -47,7 +47,7 @@ namespace Any.Proxy.Https
             Start();
         }
 
-        protected void AddConnection(HttpsConnection connection)
+        protected void AddConnection(HttpsClientConnection connection)
         {
             if (!_connections.Contains(connection))
             {
@@ -55,7 +55,7 @@ namespace Any.Proxy.Https
             }
         }
 
-        protected void RemoveConnection(HttpsConnection connection)
+        protected void RemoveConnection(HttpsClientConnection connection)
         {
             _connections.Remove(connection);
         }
@@ -85,7 +85,7 @@ namespace Any.Proxy.Https
                 Socket NewSocket = _listenSocket.EndAccept(ar);
                 if (NewSocket != null)
                 {
-                    var NewClient = new HttpsConnection(NewSocket, RemoveConnection);
+                    var NewClient = new HttpsClientConnection(NewSocket, RemoveConnection);
                     AddConnection(NewClient);
                     NewClient.StartHandshake();
                 }
@@ -102,5 +102,4 @@ namespace Any.Proxy.Https
             }
         }
     }
-
 }

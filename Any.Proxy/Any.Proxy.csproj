@@ -55,7 +55,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HttpBridge.cs" />
-    <Compile Include="Https\HttpsClient.cs" />
+    <Compile Include="Https\HttpsClientConnection.cs" />
+    <Compile Include="Https\HttpsConnection.cs" />
+    <Compile Include="Https\HttpsClientModule.cs" />
     <Compile Include="Https\HttpsModule.cs" />
     <Compile Include="Http\HttpModule.cs" />
     <Compile Include="Http\HttpClientModule.cs" />
