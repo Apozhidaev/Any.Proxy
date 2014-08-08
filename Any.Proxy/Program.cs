@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Net;
+using System.Net.Http;
+using System.Text;
 using Any.Proxy.Http;
 using Any.Proxy.Https;
 using Topshelf;
@@ -25,14 +27,14 @@ namespace Any.Proxy
             //    x.SetServiceName("AnyProxy");
             //});
 
-            var ms = new HttpsModule(IPAddress.Any, 51111);
-            ms.Start();
+            //var ms = new HttpsModule(IPAddress.Any, 51111);
+            //ms.Start();
 
-            var m = new HttpModule(IPAddress.Any, 50000);
+            var m = new HttpClientModule(IPAddress.Any, 50000);
             m.Start();
             Console.ReadKey();
             m.Dispose();
-            ms.Dispose();
+            //ms.Dispose();
         } 
     }
 }
