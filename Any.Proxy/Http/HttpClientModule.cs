@@ -1,9 +1,9 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Any.Proxy.Com;
 
 namespace Any.Proxy.Http
 {
@@ -48,7 +48,7 @@ namespace Any.Proxy.Http
                     if (myClient.Connected)
                     {
                         // получаем тело запроса
-                        byte[] httpRequest = ReadToEnd(myClient, 100);
+                        byte[] httpRequest = myClient.ReadToEnd(100);
 
                         var response = await _httpClient.PostAsync(_uri, new ByteArrayContent(httpRequest));
 
@@ -65,21 +65,6 @@ namespace Any.Proxy.Http
                     Console.WriteLine(e.Message);
                 }
             }
-        }
-
-        private static byte[] ReadToEnd(Socket mySocket, int wait)
-        {
-            var b = new byte[mySocket.ReceiveBufferSize];
-            using (var m = new MemoryStream())
-            {
-                int len = 0;
-                while (mySocket.Poll(wait, SelectMode.SelectRead) && (len = mySocket.Receive(b, b.Length, SocketFlags.None)) > 0)
-                {
-                    m.Write(b, 0, len);
-                }
-                return m.ToArray();
-            }
-
         }
 
         public void Dispose()

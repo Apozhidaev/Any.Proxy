@@ -4,17 +4,15 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{0625DA7C-0E7E-4435-A1EE-6F1477ECD113}</ProjectGuid>
-    <OutputType>Exe</OutputType>
+    <ProjectGuid>{824AC8F5-ABE7-4324-8466-2E57EDDC03F2}</ProjectGuid>
+    <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Any.Proxy</RootNamespace>
-    <AssemblyName>Any.Proxy</AssemblyName>
+    <RootNamespace>Any.Proxy.Com</RootNamespace>
+    <AssemblyName>Any.Proxy.Com</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -22,68 +20,27 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Any.Logs">
-      <HintPath>..\Components\AnyLog\Any.Logs.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="Topshelf">
-      <HintPath>..\Components\Topshelf-3.0.2\Topshelf.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HttpBridge.cs" />
-    <Compile Include="Https\HttpsClientConnection.cs" />
-    <Compile Include="Https\HttpsConnection.cs" />
-    <Compile Include="Https\HttpsClientModule.cs" />
-    <Compile Include="Https\HttpsModule.cs" />
-    <Compile Include="Http\HttpModule.cs" />
-    <Compile Include="Http\HttpClientModule.cs" />
-    <Compile Include="IBridge.cs" />
-    <Compile Include="IProxyModule.cs" />
-    <Compile Include="HttpParser.cs" />
-    <Compile Include="PortMap\Configuration\PortMapElement.cs" />
-    <Compile Include="PortMap\Configuration\PortMapElementCollection.cs" />
-    <Compile Include="PortMap\Configuration\ProxySection.cs" />
-    <Compile Include="PortMap\PortMapModule.cs" />
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Proxy.cs" />
-    <Compile Include="TcpBridge.cs" />
-    <Compile Include="TcpWriter.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config">
-      <SubType>Designer</SubType>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Any.Proxy.Com\Any.Proxy.Com.csproj">
-      <Project>{824ac8f5-abe7-4324-8466-2e57eddc03f2}</Project>
-      <Name>Any.Proxy.Com</Name>
-    </ProjectReference>
+    <Compile Include="SocketExtentions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

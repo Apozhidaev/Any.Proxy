@@ -4,6 +4,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Any.Proxy.Com;
 
 namespace Any.Proxy.Http
 {
@@ -45,7 +46,7 @@ namespace Any.Proxy.Http
                     {
 
                         // получаем тело запроса
-                        byte[] httpRequest = ReadToEnd(myClient, 100);
+                        byte[] httpRequest = myClient.ReadToEnd(100);
                         // ищем хост и порт
                         Regex myReg = new Regex(@"Host: (((?<host>.+?):(?<port>\d+?))|(?<host>.+?))\s+", RegexOptions.Multiline | RegexOptions.IgnoreCase);
                         Match m = myReg.Match(System.Text.Encoding.ASCII.GetString(httpRequest));
@@ -71,7 +72,7 @@ namespace Any.Proxy.Http
                             else
                             {
                                 // получаем ответ
-                                byte[] httpResponse = ReadToEnd(myRerouting, 1000000);
+                                byte[] httpResponse = myRerouting.ReadToEnd(1000000);
                                 // передаем ответ обратно клиенту
                                 if (httpResponse != null && httpResponse.Length > 0)
                                 {
@@ -87,21 +88,6 @@ namespace Any.Proxy.Http
                     Console.WriteLine(e.Message);
                 }
             }
-        }
-
-        private static byte[] ReadToEnd(Socket mySocket, int wait)
-        {
-            var b = new byte[mySocket.ReceiveBufferSize];
-            using (var m = new MemoryStream())
-            {
-                int len = 0;
-                while (mySocket.Poll(wait, SelectMode.SelectRead) && (len = mySocket.Receive(b, b.Length, SocketFlags.None)) > 0)
-                {
-                    m.Write(b, 0, len);
-                }
-                return m.ToArray();
-            }
-
         }
 
         public void Dispose()

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Any.Proxy
 {
-    public class TcpBridge : IDisposable
+    public class TcpBridge : IBridge
     {
         private readonly Socket _socket;
         private readonly Socket _remoteSocket;
@@ -25,6 +25,11 @@ namespace Any.Proxy
             {
                 _remoteSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
             }
+        }
+
+        public TcpBridge(Socket socket, string host, int port, bool isKeepAlive = false)
+            : this(socket, new IPEndPoint(Dns.GetHostAddresses(host)[0], port), isKeepAlive)
+        {
         }
 
         public void Dispose()
