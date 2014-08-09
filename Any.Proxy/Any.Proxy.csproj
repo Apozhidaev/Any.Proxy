@@ -55,35 +55,32 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HttpBridge.cs" />
-    <Compile Include="Https\HttpsClientConnection.cs" />
+    <Compile Include="HttpsClients\HttpsClientConnection.cs" />
     <Compile Include="Https\HttpsConnection.cs" />
-    <Compile Include="Https\HttpsClientModule.cs" />
+    <Compile Include="HttpsClients\HttpsClientModule.cs" />
     <Compile Include="Https\HttpsModule.cs" />
     <Compile Include="Http\HttpModule.cs" />
-    <Compile Include="Http\HttpClientModule.cs" />
+    <Compile Include="HttpClients\HttpClientModule.cs" />
     <Compile Include="IBridge.cs" />
     <Compile Include="IProxyModule.cs" />
     <Compile Include="HttpParser.cs" />
-    <Compile Include="PortMap\Configuration\PortMapElement.cs" />
-    <Compile Include="PortMap\Configuration\PortMapElementCollection.cs" />
-    <Compile Include="PortMap\Configuration\ProxySection.cs" />
-    <Compile Include="PortMap\PortMapModule.cs" />
+    <Compile Include="PortMaps\Configuration\PortMapElement.cs" />
+    <Compile Include="PortMaps\Configuration\PortMapElementCollection.cs" />
+    <Compile Include="Configuration\ProxySection.cs" />
+    <Compile Include="PortMaps\PortMapModule.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
+    <Compile Include="Services\HttpService.cs" />
+    <Compile Include="Services\Https\HttpsConnection.cs" />
+    <Compile Include="Services\Https\HttpsConnectionManager.cs" />
+    <Compile Include="SocketExtentions.cs" />
     <Compile Include="TcpBridge.cs" />
-    <Compile Include="TcpWriter.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config">
       <SubType>Designer</SubType>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Any.Proxy.Com\Any.Proxy.Com.csproj">
-      <Project>{824ac8f5-abe7-4324-8466-2e57eddc03f2}</Project>
-      <Name>Any.Proxy.Com</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

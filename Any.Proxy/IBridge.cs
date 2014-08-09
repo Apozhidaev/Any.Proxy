@@ -9,8 +9,6 @@ namespace Any.Proxy
 
         Task RelayAsync();
 
-        void Relay();
-
         Task RelayToAsync();
 
         Task RelayFromAsync();

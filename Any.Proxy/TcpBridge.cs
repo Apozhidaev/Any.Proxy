@@ -12,7 +12,6 @@ namespace Any.Proxy
         private readonly IPEndPoint _remotePoint;
         private readonly byte[] _buffer = new byte[40960];
         private readonly byte[] _remoteBuffer = new byte[10240];
-        private readonly TaskCompletionSource<int> _tcsHandshake = new TaskCompletionSource<int>();
         private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
         private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
 
@@ -41,21 +40,20 @@ namespace Any.Proxy
 
         public Task HandshakeAsync()
         {
-            _remoteSocket.BeginConnect(_remotePoint, OnConnected, _remoteSocket);
-            return _tcsHandshake.Task;
-        }
-
-        private void OnConnected(IAsyncResult ar)
-        {
-            try
+            var tcsHandshake = new TaskCompletionSource<int>();
+            _remoteSocket.BeginConnect(_remotePoint, ar =>
             {
-                _remoteSocket.EndConnect(ar);
-                _tcsHandshake.SetResult(0);
-            }
-            catch (Exception e)
-            {
-                _tcsHandshake.SetException(e);
-            }
+                try
+                {
+                    _remoteSocket.EndConnect(ar);
+                    tcsHandshake.SetResult(0);
+                }
+                catch (Exception e)
+                {
+                    tcsHandshake.SetException(e);
+                }
+            }, null);
+            return tcsHandshake.Task;
         }
 
         #endregion
@@ -64,12 +62,7 @@ namespace Any.Proxy
 
         public Task RelayAsync()
         {
-            return Task.Factory.StartNew(Relay);
-        }
-
-        public void Relay()
-        {
-            Task.WaitAll(RelayToAsync(), RelayFromAsync());
+            return Task.Run(() => Task.WaitAll(RelayToAsync(), RelayFromAsync()));
         }
 
         #endregion
@@ -110,13 +103,13 @@ namespace Any.Proxy
                     _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, _socket);
                     return;
                 }
+                _tcsRelayTo.SetResult(0);
             }
             catch (Exception e)
             {
                 _tcsRelayTo.SetException(e);
-                return;
             }
-            _tcsRelayTo.SetResult(0);
+            
         }
 
         #endregion
@@ -157,13 +150,13 @@ namespace Any.Proxy
                     _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, _remoteSocket);
                     return;
                 }
+                _tcsRelayFrom.SetResult(0);
             }
             catch (Exception e)
             {
                 _tcsRelayFrom.SetException(e);
-                return;
             }
-            _tcsRelayFrom.SetResult(0);
+            
         }
 
         #endregion

@@ -1,10 +1,8 @@
 ﻿using System;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Any.Proxy.Com;
 
 namespace Any.Proxy.Http
 {
@@ -24,7 +22,7 @@ namespace Any.Proxy.Http
             {
                 try
                 {
-                    await Accept(await _listener.AcceptSocketAsync());
+                    Accept(await _listener.AcceptSocketAsync());
                 }
                 catch (Exception e)
                 {
@@ -34,7 +32,7 @@ namespace Any.Proxy.Http
             }
         }
 
-        private async Task Accept(Socket myClient)
+        private async void Accept(Socket myClient)
         {
             await Task.Yield();
             using (myClient)
@@ -79,8 +77,9 @@ namespace Any.Proxy.Http
                                     myClient.Send(httpResponse, httpResponse.Length, SocketFlags.None);
                                 }
                             }
+                            myRerouting.Shutdown(SocketShutdown.Both);
                         }
-
+                        myClient.Shutdown(SocketShutdown.Both);
                     }
                 }
                 catch (Exception e)

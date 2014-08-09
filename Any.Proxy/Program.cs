@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Net;
-using System.Net.Http;
-using System.Text;
-using Any.Proxy.Http;
-using Any.Proxy.Https;
-using Topshelf;
+using Any.Proxy.HttpClients;
+using Any.Proxy.HttpsClients;
 
 namespace Any.Proxy
 {
@@ -32,6 +29,10 @@ namespace Any.Proxy
 
             var m = new HttpClientModule(IPAddress.Any, 50000);
             m.Start();
+
+
+            //var httpService = new HttpService("http://lifehttp.com/");
+            //httpService.Start();
             Console.ReadKey();
             m.Dispose();
             ms.Dispose();
