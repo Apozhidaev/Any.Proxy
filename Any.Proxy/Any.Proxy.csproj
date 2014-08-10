@@ -72,8 +72,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
     <Compile Include="Services\HttpService.cs" />
-    <Compile Include="Services\Https\HttpsConnection.cs" />
-    <Compile Include="Services\Https\HttpsConnectionManager.cs" />
+    <Compile Include="Services\HttpConnection.cs" />
     <Compile Include="SocketExtentions.cs" />
     <Compile Include="TcpBridge.cs" />
   </ItemGroup>

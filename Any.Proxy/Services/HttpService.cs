@@ -5,7 +5,6 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Any.Proxy.Services.Https;
 
 namespace Any.Proxy.Services
 {
@@ -122,7 +121,7 @@ namespace Any.Proxy.Services
         {
             var httpRequest = ReadAsString(context.Request);
             var sp = httpRequest.Split(':');
-            var connection = HttpsConnectionManager.Instance.New(sp[0], Int32.Parse(sp[1]));
+            var connection = HttpConnection.Open(sp[0], Int32.Parse(sp[1]));
             connection.HandshakeAsync().Wait();
             CreateResponse(context.Response, HttpStatusCode.OK, connection.Id);
         }
@@ -130,7 +129,7 @@ namespace Any.Proxy.Services
         public void HttpsReceive(HttpListenerContext context)
         {
             var id = ReadAsString(context.Request);
-            var connection = HttpsConnectionManager.Instance.Get(id);
+            var connection = HttpConnection.Get(id);
             if (connection == null)
             {
                 CreateResponse(context.Response, HttpStatusCode.BadRequest);
@@ -139,7 +138,7 @@ namespace Any.Proxy.Services
             var length = connection.RelayFromAsync().Result;
             if (length > 0)
             {
-                CreateResponse(context.Response, HttpStatusCode.OK, Convert.ToBase64String(connection.RemoteBuffer, 0, length));
+                CreateResponse(context.Response, HttpStatusCode.OK, Convert.ToBase64String(connection.Buffer, 0, length));
                 return;
             }
             connection.Dispose();
@@ -152,7 +151,7 @@ namespace Any.Proxy.Services
             var sp = httpRequest.Split(':');
             var id = sp[0];
             byte[] httpResponse = Convert.FromBase64String(sp[1]);
-            var connection = HttpsConnectionManager.Instance.Get(id);
+            var connection = HttpConnection.Get(id);
             if (connection == null)
             {
                 CreateResponse(context.Response, HttpStatusCode.BadRequest);

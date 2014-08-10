@@ -33,7 +33,7 @@ namespace Any.Proxy.PortMaps
             using (var bridge = new TcpBridge(socket, _toPoint))
             {
                 await bridge.HandshakeAsync();
-                bridge.Relay();
+                await bridge.RelayAsync();
             }
         }
 
