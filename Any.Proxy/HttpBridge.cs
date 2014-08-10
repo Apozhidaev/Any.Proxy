@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Any.Proxy
 {
-    public class HttpBridge : IBridge
+    public class HttpBridge : IDisposable
     {
         private readonly byte[] _buffer = new byte[40960];
 

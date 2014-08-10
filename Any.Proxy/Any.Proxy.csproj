@@ -69,7 +69,6 @@
     <Compile Include="Http\HttpModule.cs" />
     <Compile Include="Http\HttpUnit.cs" />
     <Compile Include="HttpAgent\HttpAgentUnit.cs" />
-    <Compile Include="IBridge.cs" />
     <Compile Include="IProxyModule.cs" />
     <Compile Include="HttpParser.cs" />
     <Compile Include="PortMap\Configuration\PortMapElement.cs" />

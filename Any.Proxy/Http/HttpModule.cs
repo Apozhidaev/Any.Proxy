@@ -1,5 +1,4 @@
-﻿using System.Net;
-using Any.Proxy.Http.Configuration;
+﻿using Any.Proxy.Http.Configuration;
 
 namespace Any.Proxy.Http
 {
@@ -10,8 +9,9 @@ namespace Any.Proxy.Http
 
         public HttpModule(HttpElement config)
         {
-            _httpUnit = new HttpUnit(IPAddress.Any, 50000);
-            _httpsUnit = new HttpsUnit(IPAddress.Any, 51111);
+            var ip = Proxy.GetIP(config.Host);
+            _httpUnit = new HttpUnit(ip, config.Port);
+            _httpsUnit = new HttpsUnit(ip, config.SslPort);
         }
 
         public void Dispose()

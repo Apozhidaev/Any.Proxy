@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Any.Proxy
 {
-    public class TcpBridge : IBridge
+    public class TcpBridge : IDisposable
     {
         private readonly byte[] _buffer = new byte[40960];
         private readonly byte[] _remoteBuffer = new byte[10240];
@@ -29,6 +29,14 @@ namespace Any.Proxy
         public TcpBridge(Socket socket, string host, int port, bool isKeepAlive = false)
             : this(socket, new IPEndPoint(Dns.GetHostAddresses(host)[0], port), isKeepAlive)
         {
+        }
+
+        public Socket RemoteSocket
+        {
+            get
+            {
+                return _remoteSocket;
+            }
         }
 
         public void Dispose()
@@ -62,7 +70,17 @@ namespace Any.Proxy
 
         public Task RelayAsync()
         {
-            return Task.Run(() => Task.WaitAll(RelayToAsync(), RelayFromAsync()));
+            return Task.Run(() =>
+            {
+                try
+                {
+                    Task.WaitAll(RelayToAsync(), RelayFromAsync());
+                }
+                catch (Exception)
+                {
+                }
+                
+            });
         }
 
         #endregion
@@ -71,7 +89,7 @@ namespace Any.Proxy
 
         public Task RelayToAsync()
         {
-            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, _socket);
+            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
             return _tcsRelayTo.Task;
         }
 
@@ -85,7 +103,7 @@ namespace Any.Proxy
                     _tcsRelayTo.SetResult(0);
                     return;
                 }
-                _remoteSocket.BeginSend(_buffer, 0, ret, SocketFlags.None, OnRemoteSent, _remoteSocket);
+                _remoteSocket.BeginSend(_buffer, 0, ret, SocketFlags.None, OnRemoteSent, null);
             }
             catch (Exception e)
             {
@@ -100,7 +118,7 @@ namespace Any.Proxy
                 int ret = _remoteSocket.EndSend(ar);
                 if (ret > 0)
                 {
-                    _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, _socket);
+                    _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
                     return;
                 }
                 _tcsRelayTo.SetResult(0);
@@ -117,8 +135,7 @@ namespace Any.Proxy
 
         public Task RelayFromAsync()
         {
-            _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive,
-                _remoteSocket);
+            _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, null);
             return _tcsRelayFrom.Task;
         }
 
@@ -132,7 +149,7 @@ namespace Any.Proxy
                     _tcsRelayFrom.SetResult(0);
                     return;
                 }
-                _socket.BeginSend(_remoteBuffer, 0, ret, SocketFlags.None, OnClientSent, _socket);
+                _socket.BeginSend(_remoteBuffer, 0, ret, SocketFlags.None, OnClientSent, null);
             }
             catch (Exception e)
             {
@@ -147,8 +164,7 @@ namespace Any.Proxy
                 int ret = _socket.EndSend(ar);
                 if (ret > 0)
                 {
-                    _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive,
-                        _remoteSocket);
+                    _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, null);
                     return;
                 }
                 _tcsRelayFrom.SetResult(0);
