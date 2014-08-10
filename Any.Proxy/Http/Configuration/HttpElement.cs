@@ -21,11 +21,5 @@ namespace Any.Proxy.Http.Configuration
         {
             get { return (int) this["port"]; }
         }
-
-        [ConfigurationProperty("sslPort")]
-        public int SslPort
-        {
-            get { return (int) this["sslPort"]; }
-        }
     }
 }

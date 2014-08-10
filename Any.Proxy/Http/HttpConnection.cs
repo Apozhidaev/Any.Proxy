@@ -6,10 +6,10 @@ using System.Text;
 
 namespace Any.Proxy.Http
 {
-    public class HttpsConnection : IDisposable
+    public class HttpConnection : IDisposable
     {
         private readonly byte[] _buffer = new byte[40960];
-        private readonly Action<HttpsConnection> _destroyer;
+        private readonly Action<HttpConnection> _destroyer;
         private Socket _clientSocket;
         private StringDictionary _headerFields;
         private string _httpQuery = "";
@@ -18,7 +18,7 @@ namespace Any.Proxy.Http
         private string _requestedPath;
         private TcpBridge _tcpBridge;
 
-        public HttpsConnection(Socket clientSocket, Action<HttpsConnection> destroyer)
+        public HttpConnection(Socket clientSocket, Action<HttpConnection> destroyer)
         {
             _httpRequestType = "";
             _httpVersion = "";
@@ -124,16 +124,16 @@ namespace Any.Proxy.Http
             return true;
         }
 
-        private void ProcessQuery(string Query)
+        private void ProcessQuery(string query)
         {
-            _headerFields = ParseQuery(Query);
+            _headerFields = ParseQuery(query);
             if (_headerFields == null || !_headerFields.ContainsKey("Host"))
             {
                 SendBadRequest();
                 return;
             }
-            int Port;
-            string Host;
+            int port;
+            string host;
             int ret;
             if (_httpRequestType.ToUpper().Equals("CONNECT"))
             {
@@ -141,25 +141,32 @@ namespace Any.Proxy.Http
                 ret = _requestedPath.IndexOf(":", StringComparison.InvariantCulture);
                 if (ret >= 0)
                 {
-                    Host = _requestedPath.Substring(0, ret);
-                    if (_requestedPath.Length > ret + 1)
-                        Port = int.Parse(_requestedPath.Substring(ret + 1));
-                    else
-                        Port = 443;
+                    host = _requestedPath.Substring(0, ret);
+                    port = _requestedPath.Length > ret + 1 ? int.Parse(_requestedPath.Substring(ret + 1)) : 443;
                 }
                 else
                 {
-                    Host = _requestedPath;
-                    Port = 443;
+                    host = _requestedPath;
+                    port = 443;
                 }
             }
             else
             {
-                throw new Exception("Normal HTTP");
+                ret = _headerFields["Host"].IndexOf(":", StringComparison.Ordinal);
+                if (ret > 0)
+                {
+                    host = _headerFields["Host"].Substring(0, ret);
+                    port = int.Parse(_headerFields["Host"].Substring(ret + 1));
+                }
+                else
+                {
+                    host = _headerFields["Host"];
+                    port = 80;
+                }
             }
             try
             {
-                var DestinationEndPoint = new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port);
+                var DestinationEndPoint = new IPEndPoint(Dns.GetHostAddresses(host)[0], port);
 
                 _tcpBridge = new TcpBridge(_clientSocket, DestinationEndPoint,
                     _headerFields.ContainsKey("Proxy-Connection") &&
@@ -176,7 +183,8 @@ namespace Any.Proxy.Http
                     }
                     else
                     {
-                        throw new Exception("Normal HTTP");
+                        _tcpBridge.RemoteSocket.WriteAsync(Encoding.UTF8.GetBytes(_httpQuery))
+                            .ContinueWith(__ => _tcpBridge.RelayFromAsync().ContinueWith(___ => Dispose()));
                     }
                 });
             }

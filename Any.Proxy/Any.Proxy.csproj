@@ -63,11 +63,9 @@
     <Compile Include="HttpService\Configuration\HttpServiceElementCollection.cs" />
     <Compile Include="Http\Configuration\HttpElement.cs" />
     <Compile Include="Http\Configuration\HttpElementCollection.cs" />
-    <Compile Include="Http\HttpsConnection.cs" />
+    <Compile Include="Http\HttpConnection.cs" />
     <Compile Include="HttpAgent\HttpsAgentUnit.cs" />
-    <Compile Include="Http\HttpsUnit.cs" />
     <Compile Include="Http\HttpModule.cs" />
-    <Compile Include="Http\HttpUnit.cs" />
     <Compile Include="HttpAgent\HttpAgentUnit.cs" />
     <Compile Include="IProxyModule.cs" />
     <Compile Include="HttpParser.cs" />
