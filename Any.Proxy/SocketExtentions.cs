@@ -13,7 +13,8 @@ namespace Any.Proxy
             using (var m = new MemoryStream())
             {
                 int len = 0;
-                while (socket.Poll(wait, SelectMode.SelectRead) && (len = socket.Receive(b, b.Length, SocketFlags.None)) > 0)
+                while (socket.Poll(wait, SelectMode.SelectRead) &&
+                       (len = socket.Receive(b, b.Length, SocketFlags.None)) > 0)
                 {
                     m.Write(b, 0, len);
                 }

@@ -3,19 +3,21 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Any.Proxy.HttpsClients
+namespace Any.Proxy.HttpAgent
 {
-    public class HttpsClientModule : IProxyModule
+    public class HttpsAgentUnit
     {
-         private readonly int _port;
         private readonly IPAddress _address;
-        private Socket _listenSocket;
+        private readonly LinkedList<HttpsAgentConnection> _connections = new LinkedList<HttpsAgentConnection>();
+        private readonly int _port;
         public bool _isDisposed;
-        private readonly LinkedList<HttpsClientConnection> _connections = new LinkedList<HttpsClientConnection>();
+        private Socket _listenSocket;
 
-        public HttpsClientModule(int Port) : this(IPAddress.Any, Port) { }
+        public HttpsAgentUnit(int Port) : this(IPAddress.Any, Port)
+        {
+        }
 
-        public HttpsClientModule(IPAddress address, int port)
+        public HttpsAgentUnit(IPAddress address, int port)
         {
             _isDisposed = false;
             _port = port;
@@ -47,7 +49,7 @@ namespace Any.Proxy.HttpsClients
             Start();
         }
 
-        protected void AddConnection(HttpsClientConnection connection)
+        protected void AddConnection(HttpsAgentConnection connection)
         {
             if (!_connections.Contains(connection))
             {
@@ -55,7 +57,7 @@ namespace Any.Proxy.HttpsClients
             }
         }
 
-        protected void RemoveConnection(HttpsClientConnection connection)
+        protected void RemoveConnection(HttpsAgentConnection connection)
         {
             _connections.Remove(connection);
         }
@@ -72,7 +74,9 @@ namespace Any.Proxy.HttpsClients
             {
                 _listenSocket.Shutdown(SocketShutdown.Both);
             }
-            catch { }
+            catch
+            {
+            }
             if (_listenSocket != null)
                 _listenSocket.Close();
             _isDisposed = true;
@@ -85,12 +89,14 @@ namespace Any.Proxy.HttpsClients
                 Socket NewSocket = _listenSocket.EndAccept(ar);
                 if (NewSocket != null)
                 {
-                    var NewClient = new HttpsClientConnection(NewSocket, RemoveConnection);
+                    var NewClient = new HttpsAgentConnection(NewSocket, RemoveConnection);
                     AddConnection(NewClient);
                     NewClient.StartHandshake();
                 }
             }
-            catch { }
+            catch
+            {
+            }
             try
             {
                 //Restart Listening

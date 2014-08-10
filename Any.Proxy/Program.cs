@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
-using Any.Proxy.HttpClients;
-using Any.Proxy.HttpsClients;
+using Any.Proxy.HttpAgent;
 
 namespace Any.Proxy
 {
@@ -24,18 +23,18 @@ namespace Any.Proxy
             //    x.SetServiceName("AnyProxy");
             //});
 
-            var ms = new HttpsClientModule(IPAddress.Any, 51111);
+            var ms = new HttpsAgentUnit(IPAddress.Any, 51111);
             ms.Start();
 
-            var m = new HttpClientModule(IPAddress.Any, 50000);
+            var m = new HttpAgentUnit(IPAddress.Any, 50000);
             m.Start();
 
 
-            //var httpService = new HttpService("http://lifehttp.com/");
+            //var httpService = new HttpServiceModule("http://lifehttp.com/");
             //httpService.Start();
             Console.ReadKey();
             m.Dispose();
             ms.Dispose();
-        } 
+        }
     }
 }

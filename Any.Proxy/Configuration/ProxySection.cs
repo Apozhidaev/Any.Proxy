@@ -1,5 +1,5 @@
 ﻿using System.Configuration;
-using Any.Proxy.PortMaps.Configuration;
+using Any.Proxy.PortMap.Configuration;
 
 namespace Any.Proxy.Configuration
 {
@@ -8,7 +8,7 @@ namespace Any.Proxy.Configuration
         private static readonly ConfigurationProperty PortMapProperty =
             new ConfigurationProperty(
                 "portMap",
-                typeof(PortMapElementCollection),
+                typeof (PortMapElementCollection),
                 null,
                 ConfigurationPropertyOptions.None);
 
@@ -21,10 +21,7 @@ namespace Any.Proxy.Configuration
         [ConfigurationProperty("portMap", IsRequired = false)]
         public PortMapElementCollection PortMap
         {
-            get
-            {
-                return (PortMapElementCollection)this[PortMapProperty];
-            }
+            get { return (PortMapElementCollection) this[PortMapProperty]; }
         }
     }
 }

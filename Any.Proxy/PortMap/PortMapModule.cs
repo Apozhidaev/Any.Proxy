@@ -2,13 +2,12 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace Any.Proxy.PortMaps
+namespace Any.Proxy.PortMap
 {
-
     public class PortMapModule : IProxyModule
     {
-        private readonly IPEndPoint _toPoint;
         private readonly TcpListener _listener;
+        private readonly IPEndPoint _toPoint;
 
         public PortMapModule(IPEndPoint fromPoint, IPEndPoint toPoint)
         {
@@ -26,6 +25,11 @@ namespace Any.Proxy.PortMaps
             }
         }
 
+        public void Dispose()
+        {
+            _listener.Stop();
+        }
+
         private async Task Accept(Socket socket)
         {
             await Task.Yield();
@@ -36,11 +40,5 @@ namespace Any.Proxy.PortMaps
                 await bridge.RelayAsync();
             }
         }
-
-        public void Dispose()
-        {
-            _listener.Stop();
-        }
     }
-
 }

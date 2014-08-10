@@ -7,13 +7,13 @@ namespace Any.Proxy
 {
     public class TcpBridge : IBridge
     {
-        private readonly Socket _socket;
-        private readonly Socket _remoteSocket;
-        private readonly IPEndPoint _remotePoint;
         private readonly byte[] _buffer = new byte[40960];
         private readonly byte[] _remoteBuffer = new byte[10240];
-        private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
+        private readonly IPEndPoint _remotePoint;
+        private readonly Socket _remoteSocket;
+        private readonly Socket _socket;
         private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
+        private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
 
         public TcpBridge(Socket socket, IPEndPoint remotePoint, bool isKeepAlive = false)
         {
@@ -109,7 +109,6 @@ namespace Any.Proxy
             {
                 _tcsRelayTo.SetException(e);
             }
-            
         }
 
         #endregion
@@ -118,7 +117,8 @@ namespace Any.Proxy
 
         public Task RelayFromAsync()
         {
-            _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, _remoteSocket);
+            _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive,
+                _remoteSocket);
             return _tcsRelayFrom.Task;
         }
 
@@ -147,7 +147,8 @@ namespace Any.Proxy
                 int ret = _socket.EndSend(ar);
                 if (ret > 0)
                 {
-                    _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, _remoteSocket);
+                    _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive,
+                        _remoteSocket);
                     return;
                 }
                 _tcsRelayFrom.SetResult(0);
@@ -156,7 +157,6 @@ namespace Any.Proxy
             {
                 _tcsRelayFrom.SetException(e);
             }
-            
         }
 
         #endregion

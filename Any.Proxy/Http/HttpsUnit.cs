@@ -3,19 +3,21 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
-namespace Any.Proxy.Https
+namespace Any.Proxy.Http
 {
-    public class HttpsModule :  IProxyModule
+    public class HttpsUnit
     {
-        private readonly int _port;
         private readonly IPAddress _address;
-        private Socket _listenSocket;
-        public bool _isDisposed;
         private readonly LinkedList<HttpsConnection> _connections = new LinkedList<HttpsConnection>();
+        private readonly int _port;
+        public bool _isDisposed;
+        private Socket _listenSocket;
 
-        public HttpsModule(int Port) : this(IPAddress.Any, Port) { }
+        public HttpsUnit(int Port) : this(IPAddress.Any, Port)
+        {
+        }
 
-        public HttpsModule(IPAddress address, int port)
+        public HttpsUnit(IPAddress address, int port)
         {
             _isDisposed = false;
             _port = port;
@@ -72,7 +74,9 @@ namespace Any.Proxy.Https
             {
                 _listenSocket.Shutdown(SocketShutdown.Both);
             }
-            catch { }
+            catch
+            {
+            }
             if (_listenSocket != null)
                 _listenSocket.Close();
             _isDisposed = true;
@@ -90,7 +94,9 @@ namespace Any.Proxy.Https
                     NewClient.StartHandshake();
                 }
             }
-            catch { }
+            catch
+            {
+            }
             try
             {
                 //Restart Listening
@@ -102,5 +108,4 @@ namespace Any.Proxy.Https
             }
         }
     }
-
 }

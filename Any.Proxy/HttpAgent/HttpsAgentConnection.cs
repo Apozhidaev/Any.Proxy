@@ -1,29 +1,50 @@
-using System;
+﻿using System;
 using System.Collections.Specialized;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
-namespace Any.Proxy.Https
+namespace Any.Proxy.HttpAgent
 {
-    public class HttpsConnection : IDisposable
+    public class HttpsAgentConnection : IDisposable
     {
-        private readonly Action<HttpsConnection> _destroyer;
-        private Socket _clientSocket;
         private readonly byte[] _buffer = new byte[40960];
-        private string _httpQuery = "";
-        private string _requestedPath;
+        private readonly Action<HttpsAgentConnection> _destroyer;
+        private Socket _clientSocket;
         private StringDictionary _headerFields;
-        private string _httpVersion;
+        private string _httpQuery = "";
         private string _httpRequestType;
-        private TcpBridge _tcpBridge;
+        private string _httpVersion;
+        private string _requestedPath;
+        private HttpBridge _tcpBridge;
 
-        public HttpsConnection(Socket clientSocket, Action<HttpsConnection> destroyer) 
+        public HttpsAgentConnection(Socket clientSocket, Action<HttpsAgentConnection> destroyer)
         {
             _httpRequestType = "";
             _httpVersion = "";
             _clientSocket = clientSocket;
             _destroyer = destroyer;
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                _clientSocket.Shutdown(SocketShutdown.Both);
+            }
+            catch
+            {
+            }
+
+            //Close the sockets
+            if (_clientSocket != null)
+                _clientSocket.Close();
+            if (_tcpBridge != null)
+                _tcpBridge.Dispose();
+            //Clean up
+            _clientSocket = null;
+            _tcpBridge = null;
+            if (_destroyer != null)
+                _destroyer(this);
         }
 
         public void StartHandshake()
@@ -50,12 +71,13 @@ namespace Any.Proxy.Https
                 Ret = -1;
             }
             if (Ret <= 0)
-            { //Connection is dead :(
+            {
+                //Connection is dead :(
                 Dispose();
                 return;
             }
             _httpQuery += Encoding.UTF8.GetString(_buffer, 0, Ret);
-            
+
             //if received data is valid HTTP request...
             if (IsValidQuery(_httpQuery))
             {
@@ -66,7 +88,8 @@ namespace Any.Proxy.Https
             {
                 try
                 {
-                    _clientSocket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnReceiveQuery, _clientSocket);
+                    _clientSocket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnReceiveQuery,
+                        _clientSocket);
                 }
                 catch
                 {
@@ -112,7 +135,8 @@ namespace Any.Proxy.Https
             string Host;
             int ret;
             if (_httpRequestType.ToUpper().Equals("CONNECT"))
-            { //HTTPS
+            {
+                //HTTPS
                 ret = _requestedPath.IndexOf(":", StringComparison.InvariantCulture);
                 if (ret >= 0)
                 {
@@ -134,15 +158,16 @@ namespace Any.Proxy.Https
             }
             try
             {
-                var DestinationEndPoint = new IPEndPoint(Dns.GetHostAddresses(Host)[0], Port);
-
-                _tcpBridge = new TcpBridge(_clientSocket, DestinationEndPoint, _headerFields.ContainsKey("Proxy-Connection") && _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
+                _tcpBridge = new HttpBridge(_clientSocket, Host, Port, "http://lifehttp.com",
+                    _headerFields.ContainsKey("Proxy-Connection") &&
+                    _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
                 _tcpBridge.HandshakeAsync().ContinueWith(_ =>
                 {
                     string rq;
                     if (_httpRequestType.ToUpper().Equals("CONNECT"))
-                    { //HTTPS
-                        rq = _httpVersion + " 200 Connection established\r\nProxy-Agent: Mentalis Proxy Server\r\n\r\n";
+                    {
+                        //HTTPS
+                        rq = _httpVersion + " 200 Connection established\r\nProxy-Agent: Any Proxy Server\r\n\r\n";
                         _clientSocket.WriteAsync(Encoding.UTF8.GetBytes(rq))
                             .ContinueWith(__ => _tcpBridge.RelayAsync().ContinueWith(___ => Dispose()));
                     }
@@ -151,7 +176,6 @@ namespace Any.Proxy.Https
                         throw new Exception("Normal HTTP");
                     }
                 });
-                
             }
             catch
             {
@@ -204,38 +228,19 @@ namespace Any.Proxy.Https
                     {
                         retdict.Add(Lines[Cnt].Substring(0, Ret), Lines[Cnt].Substring(Ret + 1).Trim());
                     }
-                    catch { }
+                    catch
+                    {
+                    }
                 }
             }
             return retdict;
         }
 
-        public void Dispose()
-        {
-            try
-            {
-                _clientSocket.Shutdown(SocketShutdown.Both);
-            }
-            catch { }
-            
-            //Close the sockets
-            if (_clientSocket != null)
-                _clientSocket.Close();
-            if (_tcpBridge != null)
-                _tcpBridge.Dispose();
-            //Clean up
-            _clientSocket = null;
-            _tcpBridge = null;
-            if (_destroyer != null)
-                _destroyer(this);
-        }
-
         private void SendBadRequest()
         {
-            const string brs = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><head><title>400 Bad Request</title></head><body><div align=\"center\"><table border=\"0\" cellspacing=\"3\" cellpadding=\"3\" bgcolor=\"#C0C0C0\"><tr><td><table border=\"0\" width=\"500\" cellspacing=\"3\" cellpadding=\"3\"><tr><td bgcolor=\"#B2B2B2\"><p align=\"center\"><strong><font size=\"2\" face=\"Verdana\">400 Bad Request</font></strong></p></td></tr><tr><td bgcolor=\"#D1D1D1\"><font size=\"2\" face=\"Verdana\"> The proxy server could not understand the HTTP request!<br><br> Please contact your network administrator about this problem.</font></td></tr></table></center></td></tr></table></div></body></html>";
+            const string brs =
+                "HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n<html><head><title>400 Bad Request</title></head><body><div align=\"center\"><table border=\"0\" cellspacing=\"3\" cellpadding=\"3\" bgcolor=\"#C0C0C0\"><tr><td><table border=\"0\" width=\"500\" cellspacing=\"3\" cellpadding=\"3\"><tr><td bgcolor=\"#B2B2B2\"><p align=\"center\"><strong><font size=\"2\" face=\"Verdana\">400 Bad Request</font></strong></p></td></tr><tr><td bgcolor=\"#D1D1D1\"><font size=\"2\" face=\"Verdana\"> The proxy server could not understand the HTTP request!<br><br> Please contact your network administrator about this problem.</font></td></tr></table></center></td></tr></table></div></body></html>";
             _clientSocket.WriteAsync(Encoding.UTF8.GetBytes(brs)).ContinueWith(_ => Dispose());
         }
-        
     }
-
 }

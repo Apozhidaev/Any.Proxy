@@ -55,24 +55,26 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HttpBridge.cs" />
-    <Compile Include="HttpsClients\HttpsClientConnection.cs" />
-    <Compile Include="Https\HttpsConnection.cs" />
-    <Compile Include="HttpsClients\HttpsClientModule.cs" />
-    <Compile Include="Https\HttpsModule.cs" />
+    <Compile Include="HttpAgent\HttpAgentModule.cs" />
+    <Compile Include="HttpAgent\HttpsAgentConnection.cs" />
+    <Compile Include="Http\HttpsConnection.cs" />
+    <Compile Include="HttpAgent\HttpsAgentUnit.cs" />
+    <Compile Include="Http\HttpsUnit.cs" />
     <Compile Include="Http\HttpModule.cs" />
-    <Compile Include="HttpClients\HttpClientModule.cs" />
+    <Compile Include="Http\HttpUnit.cs" />
+    <Compile Include="HttpAgent\HttpAgentUnit.cs" />
     <Compile Include="IBridge.cs" />
     <Compile Include="IProxyModule.cs" />
     <Compile Include="HttpParser.cs" />
-    <Compile Include="PortMaps\Configuration\PortMapElement.cs" />
-    <Compile Include="PortMaps\Configuration\PortMapElementCollection.cs" />
+    <Compile Include="PortMap\Configuration\PortMapElement.cs" />
+    <Compile Include="PortMap\Configuration\PortMapElementCollection.cs" />
     <Compile Include="Configuration\ProxySection.cs" />
-    <Compile Include="PortMaps\PortMapModule.cs" />
+    <Compile Include="PortMap\PortMapModule.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
-    <Compile Include="Services\HttpService.cs" />
-    <Compile Include="Services\HttpConnection.cs" />
+    <Compile Include="HttpService\HttpServiceModule.cs" />
+    <Compile Include="HttpService\HttpConnection.cs" />
     <Compile Include="SocketExtentions.cs" />
     <Compile Include="TcpBridge.cs" />
   </ItemGroup>
@@ -81,6 +83,7 @@
       <SubType>Designer</SubType>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

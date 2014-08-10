@@ -1,8 +1,8 @@
 ﻿using System.Configuration;
 
-namespace Any.Proxy.PortMaps.Configuration
+namespace Any.Proxy.PortMap.Configuration
 {
-    [ConfigurationCollection(typeof(PortMapElement), AddItemName = "listener",
+    [ConfigurationCollection(typeof (PortMapElement), AddItemName = "listener",
         CollectionType = ConfigurationElementCollectionType.BasicMap)]
     public class PortMapElementCollection : ConfigurationElementCollection
     {
@@ -13,7 +13,7 @@ namespace Any.Proxy.PortMaps.Configuration
 
         protected override object GetElementKey(ConfigurationElement element)
         {
-            return ((PortMapElement)element).Name;
+            return ((PortMapElement) element).Name;
         }
     }
 }

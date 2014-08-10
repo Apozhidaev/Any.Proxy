@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Net;
-using Any.Proxy.Configuration;
 using Any.Logs;
 using Any.Logs.Loggers;
-using Any.Proxy.PortMaps;
-using Any.Proxy.PortMaps.Configuration;
+using Any.Proxy.Configuration;
+using Any.Proxy.PortMap;
+using Any.Proxy.PortMap.Configuration;
 
 namespace Any.Proxy
 {
@@ -18,12 +18,13 @@ namespace Any.Proxy
         public void Start()
         {
             Log.Out.InitializeDefault();
-            var configuration = (ProxySection)ConfigurationManager.GetSection("proxy");
+            var configuration = (ProxySection) ConfigurationManager.GetSection("proxy");
 
-            foreach (var listener in configuration.PortMap.Cast<PortMapElement>())
+            foreach (PortMapElement listener in configuration.PortMap.Cast<PortMapElement>())
             {
-                _listeners.Add(String.Format("PortMap-{0}", listener.Name), new PortMapModule(new IPEndPoint(GetIP(listener.FromHost), listener.FromPort),
-                    new IPEndPoint(GetIP(listener.ToHost), listener.ToPort)));
+                _listeners.Add(String.Format("PortMap-{0}", listener.Name),
+                    new PortMapModule(new IPEndPoint(GetIP(listener.FromHost), listener.FromPort),
+                        new IPEndPoint(GetIP(listener.ToHost), listener.ToPort)));
             }
 
             foreach (var listener in _listeners)

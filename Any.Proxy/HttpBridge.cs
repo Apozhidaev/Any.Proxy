@@ -8,17 +8,17 @@ namespace Any.Proxy
 {
     public class HttpBridge : IBridge
     {
-        private readonly Socket _socket;
-        private readonly string _host;
-        private readonly int _port;
         private readonly byte[] _buffer = new byte[40960];
-        private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
-        private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
 
         private readonly Uri _connectUri;
+        private readonly string _host;
+        private readonly HttpClient _httpClient;
+        private readonly int _port;
         private readonly Uri _receiveUri;
         private readonly Uri _sendUri;
-        private readonly HttpClient _httpClient;
+        private readonly Socket _socket;
+        private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
+        private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
 
         private string _connectionId;
 
@@ -27,36 +27,41 @@ namespace Any.Proxy
             _socket = socket;
             _host = host;
             _port = port;
-            _connectUri = new Uri(String.Format("{0}?a=hsc",serviceUrl));
+            _connectUri = new Uri(String.Format("{0}?a=hsc", serviceUrl));
             _receiveUri = new Uri(String.Format("{0}?a=hsr", serviceUrl));
             _sendUri = new Uri(String.Format("{0}?a=hss", serviceUrl));
-            _httpClient = new HttpClient(new HttpClientHandler { UseProxy = false });
+            _httpClient = new HttpClient(new HttpClientHandler {UseProxy = false});
         }
 
         public Task HandshakeAsync()
         {
             var tcsHandshake = new TaskCompletionSource<int>();
-            _httpClient.PostAsync(_connectUri, new StringContent(String.Format("{0}:{1}", _host, _port))).ContinueWith(_ =>
-            {
-                if (_.Exception != null)
+            _httpClient.PostAsync(_connectUri, new StringContent(String.Format("{0}:{1}", _host, _port)))
+                .ContinueWith(_ =>
                 {
-                    tcsHandshake.SetException(_.Exception);
-                }
-                else
-                {
-                    if (_.Result.StatusCode == HttpStatusCode.OK)
+                    if (_.Exception != null)
                     {
-                        _connectionId = _.Result.Content.ReadAsStringAsync().Result;
-                        tcsHandshake.SetResult(0);
+                        tcsHandshake.SetException(_.Exception);
                     }
                     else
                     {
-                        tcsHandshake.SetException(new WebException("Bad response"));
+                        if (_.Result.StatusCode == HttpStatusCode.OK)
+                        {
+                            _connectionId = _.Result.Content.ReadAsStringAsync().Result;
+                            tcsHandshake.SetResult(0);
+                        }
+                        else
+                        {
+                            tcsHandshake.SetException(new WebException("Bad response"));
+                        }
                     }
-                }
-               
-            });
+                });
             return tcsHandshake.Task;
+        }
+
+        public void Dispose()
+        {
+            _httpClient.Dispose();
         }
 
         #region Relay
@@ -90,10 +95,9 @@ namespace Any.Proxy
                 {
                     try
                     {
-                        var response = _.Result;
+                        HttpResponseMessage response = _.Result;
                         if (response.StatusCode == HttpStatusCode.OK)
                         {
-
                             _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
                         }
                         else
@@ -129,10 +133,10 @@ namespace Any.Proxy
             {
                 try
                 {
-                    var response = _.Result;
+                    HttpResponseMessage response = _.Result;
                     if (response.StatusCode == HttpStatusCode.OK)
                     {
-                        var strResponse = response.Content.ReadAsStringAsync().Result;
+                        string strResponse = response.Content.ReadAsStringAsync().Result;
                         byte[] remoteBuffer = Convert.FromBase64String(strResponse);
                         _socket.BeginSend(remoteBuffer, 0, remoteBuffer.Length, SocketFlags.None, OnClientSent, null);
                     }
@@ -145,8 +149,6 @@ namespace Any.Proxy
                 {
                     _tcsRelayFrom.SetException(e);
                 }
-                
-
             });
         }
 
@@ -174,11 +176,6 @@ namespace Any.Proxy
         private string FormMessage(int length)
         {
             return String.Format("{0}:{1}", _connectionId, Convert.ToBase64String(_buffer, 0, length));
-        }
-
-        public void Dispose()
-        {
-            _httpClient.Dispose();
         }
     }
 }

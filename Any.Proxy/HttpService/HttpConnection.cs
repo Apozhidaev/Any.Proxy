@@ -5,68 +5,34 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 
-namespace Any.Proxy.Services
+namespace Any.Proxy.HttpService
 {
     public class HttpConnection : IDisposable
     {
-
         private const int Threshold = 100;
-        private static readonly Dictionary<string, HttpConnection> Connections = new Dictionary<string, HttpConnection>();
 
-        public static HttpConnection Open(string host, int port)
-        {
-            var connection = new HttpConnection(host, port);
-            lock (Connections)
-            {
-                if (Connections.Count > Threshold)
-                {
-                    var expDate = DateTime.Now.AddMinutes(-10);
-                    var removeKeys = Connections.Where(c => c.Value._lastActive < expDate).Select(c => c.Key);
-                    foreach (var removeKey in removeKeys)
-                    {
-                        Connections[removeKey].Dispose();
-                        Connections.Remove(removeKey);
-                    }
-                }
-                Connections.Add(connection.Id, connection);
-            }
-            return connection;
-        }
+        private static readonly Dictionary<string, HttpConnection> Connections =
+            new Dictionary<string, HttpConnection>();
 
-        public static HttpConnection Get(string id)
-        {
-            lock (Connections)
-            {
-                if (Connections.ContainsKey(id))
-                {
-                    return Connections[id];
-                }
-                return null;
-            }
-        }
-
-
-        private readonly Socket _socket;
-        private readonly IPEndPoint _endPoint;
         private readonly byte[] _buffer = new byte[10240];
+        private readonly IPEndPoint _endPoint;
+        private readonly Socket _socket;
         private DateTime _lastActive = DateTime.Now;
 
         private HttpConnection(string host, int port)
         {
-            var address = Dns.GetHostAddresses(host)[0];
+            IPAddress address = Dns.GetHostAddresses(host)[0];
             _endPoint = new IPEndPoint(address, port);
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
             Id = Guid.NewGuid().ToString();
         }
+
         public string Id { get; private set; }
 
         public byte[] Buffer
         {
-            get
-            {
-                return _buffer;
-            }
+            get { return _buffer; }
         }
 
         #region Handshake
@@ -156,6 +122,39 @@ namespace Any.Proxy.Services
             }
             _socket.Shutdown(SocketShutdown.Both);
             _socket.Dispose();
+        }
+
+        public static HttpConnection Open(string host, int port)
+        {
+            var connection = new HttpConnection(host, port);
+            lock (Connections)
+            {
+                if (Connections.Count > Threshold)
+                {
+                    DateTime expDate = DateTime.Now.AddMinutes(-10);
+                    IEnumerable<string> removeKeys =
+                        Connections.Where(c => c.Value._lastActive < expDate).Select(c => c.Key);
+                    foreach (string removeKey in removeKeys)
+                    {
+                        Connections[removeKey].Dispose();
+                        Connections.Remove(removeKey);
+                    }
+                }
+                Connections.Add(connection.Id, connection);
+            }
+            return connection;
+        }
+
+        public static HttpConnection Get(string id)
+        {
+            lock (Connections)
+            {
+                if (Connections.ContainsKey(id))
+                {
+                    return Connections[id];
+                }
+                return null;
+            }
         }
     }
 }
