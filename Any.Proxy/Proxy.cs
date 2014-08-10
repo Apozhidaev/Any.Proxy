@@ -6,6 +6,12 @@ using System.Net;
 using Any.Logs;
 using Any.Logs.Loggers;
 using Any.Proxy.Configuration;
+using Any.Proxy.Http;
+using Any.Proxy.Http.Configuration;
+using Any.Proxy.HttpAgent;
+using Any.Proxy.HttpAgent.Configuration;
+using Any.Proxy.HttpService;
+using Any.Proxy.HttpService.Configuration;
 using Any.Proxy.PortMap;
 using Any.Proxy.PortMap.Configuration;
 
@@ -20,11 +26,21 @@ namespace Any.Proxy
             Log.Out.InitializeDefault();
             var configuration = (ProxySection) ConfigurationManager.GetSection("proxy");
 
-            foreach (PortMapElement listener in configuration.PortMap.Cast<PortMapElement>())
+            foreach (var config in configuration.PortMap.OfType<PortMapElement>())
             {
-                _listeners.Add(String.Format("PortMap-{0}", listener.Name),
-                    new PortMapModule(new IPEndPoint(GetIP(listener.FromHost), listener.FromPort),
-                        new IPEndPoint(GetIP(listener.ToHost), listener.ToPort)));
+                _listeners.Add(String.Format("PortMap-{0}", config.Name), new PortMapModule(config));
+            }
+            foreach (var config in configuration.Http.OfType<HttpElement>())
+            {
+                _listeners.Add(String.Format("Http-{0}", config.Name), new HttpModule(config));
+            }
+            foreach (var config in configuration.HttpAgent.OfType<HttpAgentElement>())
+            {
+                _listeners.Add(String.Format("HttpAgent-{0}", config.Name), new HttpAgentModule(config));
+            }
+            foreach (var config in configuration.HttpService.OfType<HttpServiceElement>())
+            {
+                _listeners.Add(String.Format("HttpService-{0}", config.Name), new HttpServiceModule(config));
             }
 
             foreach (var listener in _listeners)
@@ -41,7 +57,7 @@ namespace Any.Proxy
             }
         }
 
-        private static IPAddress GetIP(string host)
+        public static IPAddress GetIP(string host)
         {
             return !String.IsNullOrEmpty(host) ? Dns.GetHostAddresses(host)[0] : IPAddress.Any;
         }

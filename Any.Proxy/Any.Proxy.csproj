@@ -54,9 +54,15 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HttpAgent\Configuration\HttpAgentElement.cs" />
+    <Compile Include="HttpAgent\Configuration\HttpAgentElementCollection.cs" />
     <Compile Include="HttpBridge.cs" />
     <Compile Include="HttpAgent\HttpAgentModule.cs" />
     <Compile Include="HttpAgent\HttpsAgentConnection.cs" />
+    <Compile Include="HttpService\Configuration\HttpServiceElement.cs" />
+    <Compile Include="HttpService\Configuration\HttpServiceElementCollection.cs" />
+    <Compile Include="Http\Configuration\HttpElement.cs" />
+    <Compile Include="Http\Configuration\HttpElementCollection.cs" />
     <Compile Include="Http\HttpsConnection.cs" />
     <Compile Include="HttpAgent\HttpsAgentUnit.cs" />
     <Compile Include="Http\HttpsUnit.cs" />

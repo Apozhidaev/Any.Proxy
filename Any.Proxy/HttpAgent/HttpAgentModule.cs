@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Any.Proxy.HttpAgent.Configuration;
 
 namespace Any.Proxy.HttpAgent
 {
@@ -7,10 +8,11 @@ namespace Any.Proxy.HttpAgent
         private readonly HttpAgentUnit _httpUnit;
         private readonly HttpsAgentUnit _httpsUnit;
 
-        public HttpAgentModule()
+        public HttpAgentModule(HttpAgentElement config)
         {
-            _httpUnit = new HttpAgentUnit(IPAddress.Any, 50000);
-            _httpsUnit = new HttpsAgentUnit(IPAddress.Any, 51111);
+            var ip = Proxy.GetIP(config.Host);
+            _httpUnit = new HttpAgentUnit(ip, config.Port, config.Url);
+            _httpsUnit = new HttpsAgentUnit(ip, config.SslPort, config.Url);
         }
 
         public void Dispose()

@@ -10,6 +10,7 @@ namespace Any.Proxy.HttpAgent
         private readonly byte[] _buffer = new byte[40960];
         private readonly Action<HttpsAgentConnection> _destroyer;
         private Socket _clientSocket;
+        private readonly string _url;
         private StringDictionary _headerFields;
         private string _httpQuery = "";
         private string _httpRequestType;
@@ -17,11 +18,12 @@ namespace Any.Proxy.HttpAgent
         private string _requestedPath;
         private HttpBridge _tcpBridge;
 
-        public HttpsAgentConnection(Socket clientSocket, Action<HttpsAgentConnection> destroyer)
+        public HttpsAgentConnection(Socket clientSocket, string url, Action<HttpsAgentConnection> destroyer)
         {
             _httpRequestType = "";
             _httpVersion = "";
             _clientSocket = clientSocket;
+            _url = url;
             _destroyer = destroyer;
         }
 
@@ -131,25 +133,21 @@ namespace Any.Proxy.HttpAgent
                 SendBadRequest();
                 return;
             }
-            int Port;
-            string Host;
-            int ret;
+            int port;
+            string host;
             if (_httpRequestType.ToUpper().Equals("CONNECT"))
             {
                 //HTTPS
-                ret = _requestedPath.IndexOf(":", StringComparison.InvariantCulture);
+                int ret = _requestedPath.IndexOf(":", StringComparison.InvariantCulture);
                 if (ret >= 0)
                 {
-                    Host = _requestedPath.Substring(0, ret);
-                    if (_requestedPath.Length > ret + 1)
-                        Port = int.Parse(_requestedPath.Substring(ret + 1));
-                    else
-                        Port = 443;
+                    host = _requestedPath.Substring(0, ret);
+                    port = _requestedPath.Length > ret + 1 ? int.Parse(_requestedPath.Substring(ret + 1)) : 443;
                 }
                 else
                 {
-                    Host = _requestedPath;
-                    Port = 443;
+                    host = _requestedPath;
+                    port = 443;
                 }
             }
             else
@@ -158,16 +156,15 @@ namespace Any.Proxy.HttpAgent
             }
             try
             {
-                _tcpBridge = new HttpBridge(_clientSocket, Host, Port, "http://lifehttp.com",
+                _tcpBridge = new HttpBridge(_clientSocket, host, port, _url,
                     _headerFields.ContainsKey("Proxy-Connection") &&
                     _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
                 _tcpBridge.HandshakeAsync().ContinueWith(_ =>
                 {
-                    string rq;
                     if (_httpRequestType.ToUpper().Equals("CONNECT"))
                     {
                         //HTTPS
-                        rq = _httpVersion + " 200 Connection established\r\nProxy-Agent: Any Proxy Server\r\n\r\n";
+                        string rq = _httpVersion + " 200 Connection established\r\nProxy-Agent: Any Proxy Server\r\n\r\n";
                         _clientSocket.WriteAsync(Encoding.UTF8.GetBytes(rq))
                             .ContinueWith(__ => _tcpBridge.RelayAsync().ContinueWith(___ => Dispose()));
                     }
@@ -213,10 +210,7 @@ namespace Any.Proxy.HttpAgent
                 if (_requestedPath.Length >= 7 && _requestedPath.Substring(0, 7).ToLower().Equals("http://"))
                 {
                     Ret = _requestedPath.IndexOf('/', 7);
-                    if (Ret == -1)
-                        _requestedPath = "/";
-                    else
-                        _requestedPath = _requestedPath.Substring(Ret);
+                    _requestedPath = Ret == -1 ? "/" : _requestedPath.Substring(Ret);
                 }
             }
             for (Cnt = 1; Cnt < Lines.Length; Cnt++)

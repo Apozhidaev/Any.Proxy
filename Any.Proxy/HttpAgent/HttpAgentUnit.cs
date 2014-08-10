@@ -12,9 +12,9 @@ namespace Any.Proxy.HttpAgent
         private readonly TcpListener _listener;
         private readonly Uri _uri;
 
-        public HttpAgentUnit(IPAddress address, int port)
+        public HttpAgentUnit(IPAddress address, int port, string url)
         {
-            _uri = new Uri("http://lifehttp.com?a=hr");
+            _uri = new Uri(String.Format("{0}?a=hr",url));
             _listener = new TcpListener(address, port);
             _httpClient = new HttpClient(new HttpClientHandler {UseProxy = false});
         }

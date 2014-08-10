@@ -1,19 +1,19 @@
 ﻿using System.Configuration;
 
-namespace Any.Proxy.PortMap.Configuration
+namespace Any.Proxy.HttpAgent.Configuration
 {
-    [ConfigurationCollection(typeof (PortMapElement), AddItemName = "module",
+    [ConfigurationCollection(typeof (HttpAgentElement), AddItemName = "module",
         CollectionType = ConfigurationElementCollectionType.BasicMap)]
-    public class PortMapElementCollection : ConfigurationElementCollection
+    public class HttpAgentElementCollection : ConfigurationElementCollection
     {
         protected override ConfigurationElement CreateNewElement()
         {
-            return new PortMapElement();
+            return new HttpAgentElement();
         }
 
         protected override object GetElementKey(ConfigurationElement element)
         {
-            return ((PortMapElement) element).Name;
+            return ((HttpAgentElement) element).Name;
         }
     }
 }

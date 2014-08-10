@@ -1,6 +1,8 @@
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Any.Proxy.PortMap.Configuration;
 
 namespace Any.Proxy.PortMap
 {
@@ -9,9 +11,10 @@ namespace Any.Proxy.PortMap
         private readonly TcpListener _listener;
         private readonly IPEndPoint _toPoint;
 
-        public PortMapModule(IPEndPoint fromPoint, IPEndPoint toPoint)
+        public PortMapModule(PortMapElement config)
         {
-            _toPoint = toPoint;
+            var fromPoint=new IPEndPoint(Proxy.GetIP(config.FromHost), config.FromPort);
+            _toPoint = new IPEndPoint(Proxy.GetIP(config.ToHost), config.ToPort);
             _listener = new TcpListener(fromPoint);
         }
 
@@ -40,5 +43,7 @@ namespace Any.Proxy.PortMap
                 await bridge.RelayAsync();
             }
         }
+
+        
     }
 }

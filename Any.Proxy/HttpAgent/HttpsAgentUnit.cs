@@ -10,17 +10,15 @@ namespace Any.Proxy.HttpAgent
         private readonly IPAddress _address;
         private readonly LinkedList<HttpsAgentConnection> _connections = new LinkedList<HttpsAgentConnection>();
         private readonly int _port;
+        private readonly string _url;
         public bool _isDisposed;
         private Socket _listenSocket;
 
-        public HttpsAgentUnit(int Port) : this(IPAddress.Any, Port)
-        {
-        }
-
-        public HttpsAgentUnit(IPAddress address, int port)
+        public HttpsAgentUnit(IPAddress address, int port, string url)
         {
             _isDisposed = false;
             _port = port;
+            _url = url;
             _address = address;
         }
 
@@ -89,7 +87,7 @@ namespace Any.Proxy.HttpAgent
                 Socket NewSocket = _listenSocket.EndAccept(ar);
                 if (NewSocket != null)
                 {
-                    var NewClient = new HttpsAgentConnection(NewSocket, RemoveConnection);
+                    var NewClient = new HttpsAgentConnection(NewSocket, _url, RemoveConnection);
                     AddConnection(NewClient);
                     NewClient.StartHandshake();
                 }

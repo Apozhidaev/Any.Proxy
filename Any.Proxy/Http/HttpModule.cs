@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using Any.Proxy.Http.Configuration;
 
 namespace Any.Proxy.Http
 {
@@ -7,7 +8,7 @@ namespace Any.Proxy.Http
         private readonly HttpUnit _httpUnit;
         private readonly HttpsUnit _httpsUnit;
 
-        public HttpModule()
+        public HttpModule(HttpElement config)
         {
             _httpUnit = new HttpUnit(IPAddress.Any, 50000);
             _httpsUnit = new HttpsUnit(IPAddress.Any, 51111);

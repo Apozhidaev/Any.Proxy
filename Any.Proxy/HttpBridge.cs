@@ -68,7 +68,18 @@ namespace Any.Proxy
 
         public Task RelayAsync()
         {
-            return Task.Run(() => Task.WaitAll(RelayToAsync(), RelayFromAsync()));
+            return Task.Run(() =>
+            {
+                try
+                {
+                    Task.WaitAll(RelayToAsync(), RelayFromAsync());
+                }
+                catch (Exception)
+                {
+                    
+                }
+                
+            });
         }
 
         #endregion

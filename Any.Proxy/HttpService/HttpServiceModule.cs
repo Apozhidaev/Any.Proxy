@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Any.Proxy.HttpService.Configuration;
 
 namespace Any.Proxy.HttpService
 {
@@ -12,10 +13,14 @@ namespace Any.Proxy.HttpService
     {
         private readonly HttpListener _listener;
 
-        public HttpServiceModule(string pref)
+        public HttpServiceModule(HttpServiceElement config)
         {
             _listener = new HttpListener();
-            _listener.Prefixes.Add(pref);
+            var prefixes = config.Prefixes.Split(',');
+            foreach (var prefix in prefixes)
+            {
+                _listener.Prefixes.Add(prefix);
+            }    
         }
 
         public async void Start()
