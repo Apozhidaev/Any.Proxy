@@ -83,7 +83,7 @@ namespace Any.Proxy.HttpService
             }
         }
 
-        public void HttpReceive(HttpListenerContext context)
+        private void HttpReceive(HttpListenerContext context)
         {
             string strRequest = ReadAsString(context.Request);
             byte[] httpRequest = Encoding.ASCII.GetBytes(strRequest);
@@ -131,7 +131,7 @@ namespace Any.Proxy.HttpService
             }
         }
 
-        public void HttpsConnect(HttpListenerContext context)
+        private void HttpsConnect(HttpListenerContext context)
         {
             string httpRequest = ReadAsString(context.Request);
             string[] sp = httpRequest.Split(':');
@@ -140,7 +140,7 @@ namespace Any.Proxy.HttpService
             CreateResponse(context.Response, HttpStatusCode.OK, connection.Id);
         }
 
-        public void HttpsReceive(HttpListenerContext context)
+        private void HttpsReceive(HttpListenerContext context)
         {
             string id = ReadAsString(context.Request);
             HttpConnection connection = HttpConnection.Find(id);
@@ -159,7 +159,7 @@ namespace Any.Proxy.HttpService
             CreateResponse(context.Response, HttpStatusCode.BadRequest);
         }
 
-        public void HttpsSend(HttpListenerContext context)
+        private void HttpsSend(HttpListenerContext context)
         {
             string httpRequest = ReadAsString(context.Request);
             string[] sp = httpRequest.Split(':');
