@@ -66,7 +66,6 @@
     <Compile Include="Http\HttpModule.cs" />
     <Compile Include="IBridge.cs" />
     <Compile Include="IProxyModule.cs" />
-    <Compile Include="HttpParser.cs" />
     <Compile Include="PortMap\Configuration\PortMapElement.cs" />
     <Compile Include="PortMap\Configuration\PortMapElementCollection.cs" />
     <Compile Include="Configuration\ProxySection.cs" />
