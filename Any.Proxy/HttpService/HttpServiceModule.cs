@@ -138,7 +138,7 @@ namespace Any.Proxy.HttpService
         public void HttpsReceive(HttpListenerContext context)
         {
             string id = ReadAsString(context.Request);
-            HttpConnection connection = HttpConnection.Get(id);
+            HttpConnection connection = HttpConnection.Find(id);
             if (connection == null)
             {
                 CreateResponse(context.Response, HttpStatusCode.BadRequest);
@@ -160,7 +160,7 @@ namespace Any.Proxy.HttpService
             string[] sp = httpRequest.Split(':');
             string id = sp[0];
             byte[] httpResponse = Convert.FromBase64String(sp[1]);
-            HttpConnection connection = HttpConnection.Get(id);
+            HttpConnection connection = HttpConnection.Find(id);
             if (connection == null)
             {
                 CreateResponse(context.Response, HttpStatusCode.BadRequest);

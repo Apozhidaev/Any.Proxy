@@ -145,7 +145,7 @@ namespace Any.Proxy.HttpService
             return connection;
         }
 
-        public static HttpConnection Get(string id)
+        public static HttpConnection Find(string id)
         {
             lock (Connections)
             {
