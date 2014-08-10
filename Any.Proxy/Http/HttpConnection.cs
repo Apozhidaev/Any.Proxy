@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Specialized;
-using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
@@ -10,20 +9,23 @@ namespace Any.Proxy.Http
     {
         private readonly byte[] _buffer = new byte[40960];
         private readonly Action<HttpConnection> _destroyer;
-        private Socket _clientSocket;
+        private readonly Socket _clientSocket;
         private StringDictionary _headerFields;
         private string _httpQuery = "";
         private string _httpRequestType;
         private string _httpVersion;
         private string _requestedPath;
-        private TcpBridge _tcpBridge;
+        private IBridge _bridge;
 
-        public HttpConnection(Socket clientSocket, Action<HttpConnection> destroyer)
+        private readonly Func<string, int, bool, IBridge> _bridgeFactory;
+
+        public HttpConnection(Socket clientSocket, Func<string, int, bool, IBridge> bridgeFactory, Action<HttpConnection> destroyer)
         {
             _httpRequestType = "";
             _httpVersion = "";
             _clientSocket = clientSocket;
             _destroyer = destroyer;
+            _bridgeFactory = bridgeFactory;
         }
 
         public void Dispose()
@@ -36,16 +38,12 @@ namespace Any.Proxy.Http
             {
             }
 
-            //Close the sockets
-            if (_clientSocket != null)
-                _clientSocket.Close();
-            if (_tcpBridge != null)
-                _tcpBridge.Dispose();
-            //Clean up
-            _clientSocket = null;
-            _tcpBridge = null;
-            if (_destroyer != null)
-                _destroyer(this);
+            _clientSocket.Close();
+            if (_bridge != null)
+            {
+                _bridge.Dispose();
+            }
+            _destroyer(this);
         }
 
         public void StartHandshake()
@@ -166,12 +164,9 @@ namespace Any.Proxy.Http
             }
             try
             {
-                var DestinationEndPoint = new IPEndPoint(Dns.GetHostAddresses(host)[0], port);
 
-                _tcpBridge = new TcpBridge(_clientSocket, DestinationEndPoint,
-                    _headerFields.ContainsKey("Proxy-Connection") &&
-                    _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
-                _tcpBridge.HandshakeAsync().ContinueWith(_ =>
+                _bridge = _bridgeFactory(host, port, _headerFields.ContainsKey("Proxy-Connection") && _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
+                _bridge.HandshakeAsync().ContinueWith(_ =>
                 {
                     string rq;
                     if (_httpRequestType.ToUpper().Equals("CONNECT"))
@@ -179,12 +174,12 @@ namespace Any.Proxy.Http
                         //HTTPS
                         rq = _httpVersion + " 200 Connection established\r\nProxy-Agent: Mentalis Proxy Server\r\n\r\n";
                         _clientSocket.WriteAsync(Encoding.UTF8.GetBytes(rq))
-                            .ContinueWith(__ => _tcpBridge.RelayAsync().ContinueWith(___ => Dispose()));
+                            .ContinueWith(__ => _bridge.RelayAsync().ContinueWith(___ => Dispose()));
                     }
                     else
                     {
-                        _tcpBridge.RemoteSocket.WriteAsync(Encoding.UTF8.GetBytes(_httpQuery))
-                            .ContinueWith(__ => _tcpBridge.RelayFromAsync().ContinueWith(___ => Dispose()));
+                        _bridge.WriteAsync(Encoding.UTF8.GetBytes(_httpQuery))
+                            .ContinueWith(__ => _bridge.RelayFromAsync().ContinueWith(___ => Dispose()));
                     }
                 });
             }
@@ -224,10 +219,7 @@ namespace Any.Proxy.Http
                 if (_requestedPath.Length >= 7 && _requestedPath.Substring(0, 7).ToLower().Equals("http://"))
                 {
                     Ret = _requestedPath.IndexOf('/', 7);
-                    if (Ret == -1)
-                        _requestedPath = "/";
-                    else
-                        _requestedPath = _requestedPath.Substring(Ret);
+                    _requestedPath = Ret == -1 ? "/" : _requestedPath.Substring(Ret);
                 }
             }
             for (Cnt = 1; Cnt < Lines.Length; Cnt++)

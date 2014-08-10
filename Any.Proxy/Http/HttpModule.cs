@@ -92,7 +92,7 @@ namespace Any.Proxy.Http
                 Socket NewSocket = _listenSocket.EndAccept(ar);
                 if (NewSocket != null)
                 {
-                    var NewClient = new HttpConnection(NewSocket, RemoveConnection);
+                    var NewClient = new HttpConnection(NewSocket, (host, port, isKeepAlive) => new TcpBridge(NewSocket, host, port, isKeepAlive), RemoveConnection);
                     AddConnection(NewClient);
                     NewClient.StartHandshake();
                 }

@@ -2,24 +2,26 @@
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using Any.Proxy.Http;
+using Any.Proxy.HttpAgent.Configuration;
 
 namespace Any.Proxy.HttpAgent
 {
-    public class HttpsAgentUnit
+    public class HttpAgentModule : IProxyModule
     {
         private readonly IPAddress _address;
-        private readonly LinkedList<HttpsAgentConnection> _connections = new LinkedList<HttpsAgentConnection>();
+        private readonly LinkedList<HttpConnection> _connections = new LinkedList<HttpConnection>();
         private readonly int _port;
         private readonly string _url;
         public bool _isDisposed;
         private Socket _listenSocket;
 
-        public HttpsAgentUnit(IPAddress address, int port, string url)
+        public HttpAgentModule(HttpAgentElement config)
         {
             _isDisposed = false;
-            _port = port;
-            _url = url;
-            _address = address;
+            _port = config.Port;
+            _url = config.Url;
+            _address = Proxy.GetIP(config.Host);
         }
 
         public void Start()
@@ -47,7 +49,7 @@ namespace Any.Proxy.HttpAgent
             Start();
         }
 
-        protected void AddConnection(HttpsAgentConnection connection)
+        protected void AddConnection(HttpConnection connection)
         {
             if (!_connections.Contains(connection))
             {
@@ -55,9 +57,15 @@ namespace Any.Proxy.HttpAgent
             }
         }
 
-        protected void RemoveConnection(HttpsAgentConnection connection)
+        protected void RemoveConnection(HttpConnection connection)
         {
-            _connections.Remove(connection);
+            lock (_connections)
+            {
+                if (_connections.Contains(connection))
+                {
+                    _connections.Remove(connection);
+                }
+            }
         }
 
         public void Dispose()
@@ -87,7 +95,7 @@ namespace Any.Proxy.HttpAgent
                 Socket NewSocket = _listenSocket.EndAccept(ar);
                 if (NewSocket != null)
                 {
-                    var NewClient = new HttpsAgentConnection(NewSocket, _url, RemoveConnection);
+                    var NewClient = new HttpConnection(NewSocket, (host, port, isKeepAlive) => new HttpBridge(NewSocket, host, port, _url, isKeepAlive), RemoveConnection);
                     AddConnection(NewClient);
                     NewClient.StartHandshake();
                 }

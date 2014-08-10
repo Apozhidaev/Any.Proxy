@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Any.Proxy
 {
-    public class TcpBridge : IDisposable
+    public class TcpBridge : IBridge
     {
         private readonly byte[] _buffer = new byte[40960];
         private readonly byte[] _remoteBuffer = new byte[10240];
@@ -35,14 +35,6 @@ namespace Any.Proxy
         public TcpBridge(Socket socket, string host, int port, bool isKeepAlive = false)
             : this(socket, new IPEndPoint(Dns.GetHostAddresses(host)[0], port), isKeepAlive)
         {
-        }
-
-        public Socket RemoteSocket
-        {
-            get
-            {
-                return _remoteSocket;
-            }
         }
 
         public void Dispose()
@@ -205,5 +197,10 @@ namespace Any.Proxy
         }
 
         #endregion
+
+        public Task WriteAsync(byte[] bytes)
+        {
+            return _remoteSocket.WriteAsync(bytes);
+        }
     }
 }

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Any.Proxy.HttpService.Configuration;
 
@@ -60,17 +58,14 @@ namespace Any.Proxy.HttpService
             {
                 switch (context.Request.QueryString["a"])
                 {
+                    case "hc":
+                        HttpConnect(context);
+                        break;
                     case "hr":
                         HttpReceive(context);
                         break;
-                    case "hsc":
-                        HttpsConnect(context);
-                        break;
-                    case "hsr":
-                        HttpsReceive(context);
-                        break;
-                    case "hss":
-                        HttpsSend(context);
+                    case "hs":
+                        HttpSend(context);
                         break;
                     default:
                         CreateResponse(context.Response, HttpStatusCode.BadRequest);
@@ -83,55 +78,7 @@ namespace Any.Proxy.HttpService
             }
         }
 
-        private void HttpReceive(HttpListenerContext context)
-        {
-            string strRequest = ReadAsString(context.Request);
-            byte[] httpRequest = Encoding.ASCII.GetBytes(strRequest);
-
-            // ищем хост и порт
-            var myReg = new Regex(@"Host: (((?<host>.+?):(?<port>\d+?))|(?<host>.+?))\s+",
-                RegexOptions.Multiline | RegexOptions.IgnoreCase);
-            Match m = myReg.Match(strRequest);
-            string host = m.Groups["host"].Value;
-            int port = 0;
-            // если порта нет, то используем 80 по умолчанию
-            if (!int.TryParse(m.Groups["port"].Value, out port))
-            {
-                port = 80;
-            }
-
-            // получаем апишник по хосту
-            IPHostEntry myIPHostEntry = Dns.GetHostEntry(host);
-
-            // создаем точку доступа
-            var myIPEndPoint = new IPEndPoint(myIPHostEntry.AddressList[0], port);
-
-            // создаем сокет и передаем ему запрос
-            using (
-                var myRerouting = new Socket(myIPHostEntry.AddressList[0].AddressFamily, SocketType.Stream,
-                    ProtocolType.Tcp))
-            {
-                myRerouting.Connect(myIPEndPoint);
-                if (myRerouting.Send(httpRequest, httpRequest.Length, SocketFlags.None) != httpRequest.Length)
-                {
-                    CreateResponse(context.Response, HttpStatusCode.BadRequest);
-                    myRerouting.Shutdown(SocketShutdown.Both);
-                    return;
-                }
-                byte[] httpResponse = myRerouting.ReadToEnd(1000000);
-                // передаем ответ обратно клиенту
-                if (httpResponse != null && httpResponse.Length > 0)
-                {
-                    CreateResponse(context.Response, HttpStatusCode.OK, httpResponse);
-                    myRerouting.Shutdown(SocketShutdown.Both);
-                    return;
-                }
-                CreateResponse(context.Response, HttpStatusCode.BadRequest);
-                myRerouting.Shutdown(SocketShutdown.Both);
-            }
-        }
-
-        private void HttpsConnect(HttpListenerContext context)
+        private void HttpConnect(HttpListenerContext context)
         {
             string httpRequest = ReadAsString(context.Request);
             string[] sp = httpRequest.Split(':');
@@ -140,7 +87,7 @@ namespace Any.Proxy.HttpService
             CreateResponse(context.Response, HttpStatusCode.OK, connection.Id);
         }
 
-        private void HttpsReceive(HttpListenerContext context)
+        private void HttpReceive(HttpListenerContext context)
         {
             string id = ReadAsString(context.Request);
             HttpConnection connection = HttpConnection.Find(id);
@@ -159,7 +106,7 @@ namespace Any.Proxy.HttpService
             CreateResponse(context.Response, HttpStatusCode.BadRequest);
         }
 
-        private void HttpsSend(HttpListenerContext context)
+        private void HttpSend(HttpListenerContext context)
         {
             string httpRequest = ReadAsString(context.Request);
             string[] sp = httpRequest.Split(':');
@@ -199,31 +146,6 @@ namespace Any.Proxy.HttpService
                 using (Stream stream = context.OutputStream)
                 {
                     stream.Write(responseData, 0, responseData.Length);
-                }
-                context.Close();
-            }
-            catch (Exception)
-            {
-                try
-                {
-                    context.Abort();
-                }
-                catch (Exception)
-                {
-                }
-            }
-        }
-
-        private void CreateResponse(HttpListenerResponse context, HttpStatusCode status, byte[] responseData)
-        {
-            try
-            {
-                byte[] responseData64 = Encoding.ASCII.GetBytes(Convert.ToBase64String(responseData));
-                context.ContentLength64 = responseData64.Length;
-                context.StatusCode = (int) status;
-                using (Stream stream = context.OutputStream)
-                {
-                    stream.Write(responseData64, 0, responseData64.Length);
                 }
                 context.Close();
             }

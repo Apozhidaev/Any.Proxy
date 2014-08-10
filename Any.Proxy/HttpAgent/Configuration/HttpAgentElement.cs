@@ -22,12 +22,6 @@ namespace Any.Proxy.HttpAgent.Configuration
             get { return (int) this["port"]; }
         }
 
-        [ConfigurationProperty("sslPort")]
-        public int SslPort
-        {
-            get { return (int) this["sslPort"]; }
-        }
-
         [ConfigurationProperty("url")]
         public string Url
         {

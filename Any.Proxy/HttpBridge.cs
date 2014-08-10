@@ -2,17 +2,18 @@
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Any.Proxy
 {
-    public class HttpBridge : IDisposable
+    public class HttpBridge : IBridge
     {
         private readonly byte[] _buffer = new byte[40960];
 
         private readonly Uri _connectUri;
         private readonly string _host;
-        private readonly HttpClient _httpClient;
+        private HttpClient _httpClient;
         private readonly int _port;
         private readonly Uri _receiveUri;
         private readonly Uri _sendUri;
@@ -22,15 +23,21 @@ namespace Any.Proxy
 
         private string _connectionId;
 
+        private DateTime _lastActivity = DateTime.Now.AddYears(1);
+        private readonly Timer _timer;
+
         public HttpBridge(Socket socket, string host, int port, string serviceUrl, bool isKeepAlive = false)
         {
             _socket = socket;
             _host = host;
             _port = port;
-            _connectUri = new Uri(String.Format("{0}?a=hsc", serviceUrl));
-            _receiveUri = new Uri(String.Format("{0}?a=hsr", serviceUrl));
-            _sendUri = new Uri(String.Format("{0}?a=hss", serviceUrl));
+            _connectUri = new Uri(String.Format("{0}?a=hc", serviceUrl));
+            _receiveUri = new Uri(String.Format("{0}?a=hr", serviceUrl));
+            _sendUri = new Uri(String.Format("{0}?a=hs", serviceUrl));
             _httpClient = new HttpClient(new HttpClientHandler {UseProxy = false});
+
+            _timer = new Timer(_ => DoWork());
+            _timer.Change(1000, 100);
         }
 
         public Task HandshakeAsync()
@@ -61,7 +68,20 @@ namespace Any.Proxy
 
         public void Dispose()
         {
-            _httpClient.Dispose();
+            _timer.Dispose();
+            if (_httpClient != null)
+            {
+                _httpClient.Dispose();
+                _httpClient = null;
+            }
+        }
+
+        private void DoWork()
+        {
+            if (DateTime.Now > _lastActivity && DateTime.Now - _lastActivity > TimeSpan.FromSeconds(3))
+            {
+                Dispose();
+            }
         }
 
         #region Relay
@@ -88,6 +108,7 @@ namespace Any.Proxy
 
         public Task RelayToAsync()
         {
+            _lastActivity = DateTime.Now;
             _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
             return _tcsRelayTo.Task;
         }
@@ -96,6 +117,7 @@ namespace Any.Proxy
         {
             try
             {
+                _lastActivity = DateTime.Now;
                 int ret = _socket.EndReceive(ar);
                 if (ret <= 0)
                 {
@@ -106,6 +128,7 @@ namespace Any.Proxy
                 {
                     try
                     {
+                        _lastActivity = DateTime.Now;
                         HttpResponseMessage response = _.Result;
                         if (response.StatusCode == HttpStatusCode.OK)
                         {
@@ -140,10 +163,12 @@ namespace Any.Proxy
 
         private void RemoteReceive()
         {
+            _lastActivity = DateTime.Now;
             _httpClient.PostAsync(_receiveUri, new StringContent(_connectionId)).ContinueWith(_ =>
             {
                 try
                 {
+                    _lastActivity = DateTime.Now;
                     HttpResponseMessage response = _.Result;
                     if (response.StatusCode == HttpStatusCode.OK)
                     {
@@ -184,9 +209,39 @@ namespace Any.Proxy
 
         #endregion
 
+        public Task WriteAsync(byte[] bytes)
+        {
+            var tcsWrite = new TaskCompletionSource<int>();
+            _httpClient.PostAsync(_sendUri, new StringContent(FormMessage(bytes))).ContinueWith(_ =>
+            {
+                try
+                {
+                    HttpResponseMessage response = _.Result;
+                    if (response.StatusCode == HttpStatusCode.OK)
+                    {
+                        tcsWrite.SetResult(0);
+                    }
+                    else
+                    {
+                        tcsWrite.SetException(new WebException("Bad response"));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    tcsWrite.SetException(ex);
+                }
+            });
+            return tcsWrite.Task;
+        }
+
         private string FormMessage(int length)
         {
             return String.Format("{0}:{1}", _connectionId, Convert.ToBase64String(_buffer, 0, length));
+        }
+
+        private string FormMessage(byte[] bytes)
+        {
+            return String.Format("{0}:{1}", _connectionId, Convert.ToBase64String(bytes));
         }
     }
 }
