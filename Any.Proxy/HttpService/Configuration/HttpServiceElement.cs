@@ -10,7 +10,7 @@ namespace Any.Proxy.HttpService.Configuration
             get { return (string) this["name"]; }
         }
 
-        [ConfigurationProperty("prefixes")]
+        [ConfigurationProperty("prefixes", IsRequired = true)]
         public string Prefixes
         {
             get { return (string)this["prefixes"]; }

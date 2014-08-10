@@ -7,12 +7,14 @@ namespace Any.Proxy.Remote
 {
     public class RemoteControl
     {
+        private readonly RemoteSection _config;
         private readonly HttpListener _listener;
 
-        public RemoteControl(string prefixes)
+        public RemoteControl(RemoteSection config)
         {
+            _config = config;
             _listener = new HttpListener();
-            foreach (var prefix in prefixes.Split(','))
+            foreach (var prefix in config.Prefixes.Split(','))
             {
                 _listener.Prefixes.Add(prefix);
             }    
@@ -53,13 +55,24 @@ namespace Any.Proxy.Remote
             await Task.Yield();
             try
             {
+                if (context.Request.QueryString["p"] != _config.Password)
+                {
+                    CreateResponse(context.Response, HttpStatusCode.Unauthorized);
+                    return;
+                }
                 switch (context.Request.QueryString["a"])
                 {
                     case "reboot":
-                        Reboot(context);
+                        KillProcess();
+                        StartProcess();
+                        CreateResponse(context.Response, HttpStatusCode.OK);
+                        break;
+                    case "stop":
+                        KillProcess();
+                        CreateResponse(context.Response, HttpStatusCode.OK);
                         break;
                     default:
-                        CreateResponse(context.Response, HttpStatusCode.BadRequest);
+                        CreateResponse(context.Response, HttpStatusCode.NotFound);
                         break;
                 }
             }
@@ -69,15 +82,18 @@ namespace Any.Proxy.Remote
             }
         }
 
-        private void Reboot(HttpListenerContext context)
+        private void StartProcess()
+        {
+            Process.Start(_config.ProcessPath);
+        }
+
+        private void KillProcess()
         {
             var processes = Process.GetProcessesByName("Any.Proxy");
             foreach (var process in processes)
             {
                 process.Kill();
             }
-            Process.Start(@"C:\Proxy\Any.Proxy.exe");
-            CreateResponse(context.Response, HttpStatusCode.OK);
         }
 
         private void CreateResponse(HttpListenerResponse context, HttpStatusCode status)

@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Configuration;
 
 namespace Any.Proxy.Remote
 {
@@ -10,7 +7,8 @@ namespace Any.Proxy.Remote
     {
         static void Main(string[] args)
         {
-            var rc = new RemoteControl("http://lifehttp.com/");
+            var configuration = (RemoteSection)ConfigurationManager.GetSection("remote");
+            var rc = new RemoteControl(configuration);
             rc.Start();
             Console.ReadKey();
             rc.Stop();
