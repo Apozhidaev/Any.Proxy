@@ -14,7 +14,7 @@ namespace Any.Proxy.HttpService
         private static readonly Dictionary<string, HttpConnection> Connections =
             new Dictionary<string, HttpConnection>();
 
-        private readonly byte[] _buffer = new byte[10240];
+        private readonly byte[] _buffer;
         private readonly IPEndPoint _endPoint;
         private readonly Socket _socket;
         private DateTime _lastActive = DateTime.Now;
@@ -25,6 +25,7 @@ namespace Any.Proxy.HttpService
             _endPoint = new IPEndPoint(address, port);
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
+            _buffer = new byte[_socket.ReceiveBufferSize];
             Id = Guid.NewGuid().ToString();
         }
 

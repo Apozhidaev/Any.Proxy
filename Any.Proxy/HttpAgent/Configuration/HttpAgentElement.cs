@@ -1,9 +1,22 @@
-﻿using System.Configuration;
+﻿using Any.Proxy.Configuration;
+using System.Configuration;
 
 namespace Any.Proxy.HttpAgent.Configuration
 {
     public class HttpAgentElement : ConfigurationElement
     {
+        private static readonly ConfigurationProperty HttpBridgeProperty =
+           new ConfigurationProperty(
+               "httpBridge",
+               typeof(HttpBridgeElement),
+               null,
+               ConfigurationPropertyOptions.None);
+
+        public HttpAgentElement()
+        {
+            base.Properties.Add(HttpBridgeProperty);
+        }
+
         [ConfigurationProperty("name", IsRequired = true)]
         public string Name
         {
@@ -22,10 +35,10 @@ namespace Any.Proxy.HttpAgent.Configuration
             get { return (int) this["port"]; }
         }
 
-        [ConfigurationProperty("url")]
-        public string Url
+        [ConfigurationProperty("httpBridge")]
+        public HttpBridgeElement HttpBridge
         {
-            get { return (string)this["url"]; }
+            get { return (HttpBridgeElement)this["httpBridge"]; }
         }
     }
 }

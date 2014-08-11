@@ -1,16 +1,20 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
-using Any.Proxy.Http.Configuration;
+using Any.Proxy.Http;
+using Any.Proxy.HttpAgent.Configuration;
 
-namespace Any.Proxy.Http
+namespace Any.Proxy.HttpAgent
 {
-    public class HttpModule : HttpModuleBase
+    public class HttpAgentModule : HttpModuleBase
     {
-        public HttpModule(HttpElement config)
-            :base(config.Host,config.Port)
+        private readonly HttpAgentElement _config;
+
+        public HttpAgentModule(HttpAgentElement config)
+            : base(config.Host, config.Port)
         {
+            _config = config;
         }
 
         protected override void OnAccept(IAsyncResult ar)
@@ -21,7 +25,7 @@ namespace Any.Proxy.Http
                 if (NewSocket != null)
                 {
                     var NewClient = new HttpConnection(NewSocket, 
-                        (host, port, isKeepAlive) => new TcpBridge(NewSocket, host, port, isKeepAlive), RemoveConnection);
+                        (host, port, isKeepAlive) => new HttpBridge(_config.HttpBridge, NewSocket, host, port, isKeepAlive), RemoveConnection);
                     AddConnection(NewClient);
                     NewClient.StartHandshake();
                 }

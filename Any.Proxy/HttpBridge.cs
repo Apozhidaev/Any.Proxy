@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Any.Proxy.Configuration;
+using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
@@ -9,7 +10,7 @@ namespace Any.Proxy
 {
     public class HttpBridge : IBridge
     {
-        private readonly byte[] _buffer = new byte[40960];
+        private readonly byte[] _buffer;
 
         private readonly Uri _connectUri;
         private readonly string _host;
@@ -26,15 +27,34 @@ namespace Any.Proxy
         private DateTime _lastActivity = DateTime.Now.AddYears(1);
         private readonly Timer _timer;
 
-        public HttpBridge(Socket socket, string host, int port, string serviceUrl, bool isKeepAlive = false)
+        public HttpBridge(HttpBridgeElement config, Socket socket, string host, int port, bool isKeepAlive = false)
         {
             _socket = socket;
             _host = host;
             _port = port;
-            _connectUri = new Uri(String.Format("{0}?a=hc", serviceUrl));
-            _receiveUri = new Uri(String.Format("{0}?a=hr", serviceUrl));
-            _sendUri = new Uri(String.Format("{0}?a=hs", serviceUrl));
-            _httpClient = new HttpClient(new HttpClientHandler {UseProxy = false});
+            _buffer = new byte[socket.ReceiveBufferSize];
+            _connectUri = new Uri(String.Format("{0}?a=hc", config.Url));
+            _receiveUri = new Uri(String.Format("{0}?a=hr", config.Url));
+            _sendUri = new Uri(String.Format("{0}?a=hs", config.Url));
+
+            var handler = new HttpClientHandler { UseProxy = config.UseProxy };
+            if(config.UseProxy)
+            {
+                WebProxy proxy;
+                if(config.UseDefaultCredentials)
+                {
+                    proxy = new WebProxy(config.Proxy);
+                }
+                else
+                {
+                    var auth = new NetworkCredential(config.UserName, config.Password);
+                    proxy = new WebProxy(config.Proxy, true, null, auth);
+                }
+                proxy.UseDefaultCredentials = config.UseDefaultCredentials;
+                handler.Proxy = proxy;
+            }
+
+            _httpClient = new HttpClient(handler);
 
             _timer = new Timer(_ => DoWork());
             _timer.Change(1000, 100);
@@ -68,6 +88,8 @@ namespace Any.Proxy
 
         public void Dispose()
         {
+            _tcsRelayFrom.TrySetResult(0);
+            _tcsRelayTo.TrySetResult(0);
             _timer.Dispose();
             if (_httpClient != null)
             {
@@ -96,9 +118,9 @@ namespace Any.Proxy
                 }
                 catch (Exception)
                 {
-                    
+
                 }
-                
+
             });
         }
 
@@ -121,7 +143,7 @@ namespace Any.Proxy
                 int ret = _socket.EndReceive(ar);
                 if (ret <= 0)
                 {
-                    _tcsRelayTo.SetResult(0);
+                    _tcsRelayTo.TrySetResult(0);
                     return;
                 }
                 _httpClient.PostAsync(_sendUri, new StringContent(FormMessage(ret))).ContinueWith(_ =>
@@ -136,18 +158,18 @@ namespace Any.Proxy
                         }
                         else
                         {
-                            _tcsRelayTo.SetResult(0);
+                            _tcsRelayTo.TrySetResult(0);
                         }
                     }
                     catch (Exception ex)
                     {
-                        _tcsRelayTo.SetException(ex);
+                        _tcsRelayTo.TrySetException(ex);
                     }
                 });
             }
             catch (Exception e)
             {
-                _tcsRelayTo.SetException(e);
+                _tcsRelayTo.TrySetException(e);
             }
         }
 
@@ -178,12 +200,12 @@ namespace Any.Proxy
                     }
                     else
                     {
-                        _tcsRelayFrom.SetResult(0);
+                        _tcsRelayFrom.TrySetResult(0);
                     }
                 }
                 catch (Exception e)
                 {
-                    _tcsRelayFrom.SetException(e);
+                    _tcsRelayFrom.TrySetException(e);
                 }
             });
         }
@@ -201,10 +223,10 @@ namespace Any.Proxy
             }
             catch (Exception e)
             {
-                _tcsRelayFrom.SetException(e);
+                _tcsRelayFrom.TrySetException(e);
                 return;
             }
-            _tcsRelayFrom.SetResult(0);
+            _tcsRelayFrom.TrySetResult(0);
         }
 
         #endregion
@@ -219,16 +241,16 @@ namespace Any.Proxy
                     HttpResponseMessage response = _.Result;
                     if (response.StatusCode == HttpStatusCode.OK)
                     {
-                        tcsWrite.SetResult(0);
+                        tcsWrite.TrySetResult(0);
                     }
                     else
                     {
-                        tcsWrite.SetException(new WebException("Bad response"));
+                        tcsWrite.TrySetException(new WebException("Bad response"));
                     }
                 }
                 catch (Exception ex)
                 {
-                    tcsWrite.SetException(ex);
+                    tcsWrite.TrySetException(ex);
                 }
             });
             return tcsWrite.Task;

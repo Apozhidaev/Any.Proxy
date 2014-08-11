@@ -1,27 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using Any.Proxy.Http;
-using Any.Proxy.HttpAgent.Configuration;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Any.Proxy.HttpAgent
+namespace Any.Proxy.Http
 {
-    public class HttpAgentModule : IProxyModule
+    public abstract class HttpModuleBase : IProxyModule
     {
         private readonly IPAddress _address;
         private readonly LinkedList<HttpConnection> _connections = new LinkedList<HttpConnection>();
         private readonly int _port;
-        private readonly string _url;
         public bool _isDisposed;
-        private Socket _listenSocket;
+        protected Socket _listenSocket;
 
-        public HttpAgentModule(HttpAgentElement config)
+        protected HttpModuleBase(string host, int port)
         {
             _isDisposed = false;
-            _port = config.Port;
-            _url = config.Url;
-            _address = Proxy.GetIP(config.Host);
+            _port = port;
+            _address = Proxy.GetIP(host);
         }
 
         public void Start()
@@ -88,30 +87,6 @@ namespace Any.Proxy.HttpAgent
             _isDisposed = true;
         }
 
-        public void OnAccept(IAsyncResult ar)
-        {
-            try
-            {
-                Socket NewSocket = _listenSocket.EndAccept(ar);
-                if (NewSocket != null)
-                {
-                    var NewClient = new HttpConnection(NewSocket, (host, port, isKeepAlive) => new HttpBridge(NewSocket, host, port, _url, isKeepAlive), RemoveConnection);
-                    AddConnection(NewClient);
-                    NewClient.StartHandshake();
-                }
-            }
-            catch
-            {
-            }
-            try
-            {
-                //Restart Listening
-                _listenSocket.BeginAccept(OnAccept, _listenSocket);
-            }
-            catch
-            {
-                Dispose();
-            }
-        }
+        protected abstract void OnAccept(IAsyncResult ar);
     }
 }

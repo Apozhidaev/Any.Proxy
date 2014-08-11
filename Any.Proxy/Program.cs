@@ -9,22 +9,25 @@ namespace Any.Proxy
     {
         public static void Main()
         {
-            HostFactory.Run(x =>
-            {
-                x.Service<Proxy>(s =>
-                {
-                    s.ConstructUsing(name => new Proxy());
-                    s.WhenStarted(tc => tc.Start());
-                    s.WhenStopped(tc => tc.Stop());
-                });
-                x.RunAsLocalSystem();
+            //HostFactory.Run(x =>
+            //{
+            //    x.Service<Proxy>(s =>
+            //    {
+            //        s.ConstructUsing(name => new Proxy());
+            //        s.WhenStarted(tc => tc.Start());
+            //        s.WhenStopped(tc => tc.Stop());
+            //    });
+            //    x.RunAsLocalSystem();
 
-                x.SetDescription("Any Proxy");
-                x.SetDisplayName("AnyProxy");
-                x.SetServiceName("AnyProxy");
-            });
+            //    x.SetDescription("Any Proxy");
+            //    x.SetDisplayName("AnyProxy");
+            //    x.SetServiceName("AnyProxy");
+            //});
 
+            var proxy = new Proxy();
+            proxy.Start();
             Console.ReadKey();
+            proxy.Stop();
         }
     }
 }

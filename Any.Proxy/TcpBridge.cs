@@ -8,16 +8,17 @@ namespace Any.Proxy
 {
     public class TcpBridge : IBridge
     {
-        private readonly byte[] _buffer = new byte[40960];
-        private readonly byte[] _remoteBuffer = new byte[10240];
+        private readonly byte[] _buffer;
+        private readonly byte[] _remoteBuffer;
         private readonly IPEndPoint _remotePoint;
-        private Socket _remoteSocket;
+        private readonly Socket _remoteSocket;
         private readonly Socket _socket;
         private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
         private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
 
         private DateTime _lastActivity = DateTime.Now.AddYears(1);
         private readonly Timer _timer;
+        private bool _isDisposed = false;
 
         public TcpBridge(Socket socket, IPEndPoint remotePoint, bool isKeepAlive = false)
         {
@@ -28,6 +29,8 @@ namespace Any.Proxy
             {
                 _remoteSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
             }
+            _buffer = new byte[socket.ReceiveBufferSize];
+            _remoteBuffer = new byte[_remoteSocket.ReceiveBufferSize];
             _timer = new Timer(_ => DoWork());
             _timer.Change(1000, 100);
         }
@@ -39,14 +42,26 @@ namespace Any.Proxy
 
         public void Dispose()
         {
+            _tcsRelayFrom.TrySetResult(0);
+            _tcsRelayTo.TrySetResult(0);
             _timer.Dispose();
-            if (_remoteSocket != null)
+            lock (_remoteSocket)
             {
-                _remoteSocket.Shutdown(SocketShutdown.Both);
-                _remoteSocket.Close();
-                _remoteSocket.Dispose();
-                _remoteSocket = null;
+                if (!_isDisposed)
+                {
+                    try
+                    {
+                        _remoteSocket.Shutdown(SocketShutdown.Both);
+                        _remoteSocket.Close();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                    _remoteSocket.Dispose();
+                    _isDisposed = true;
+                }
             }
+            
             
 
         }
@@ -117,14 +132,14 @@ namespace Any.Proxy
                 int ret = _socket.EndReceive(ar);
                 if (ret <= 0)
                 {
-                    _tcsRelayTo.SetResult(0);
+                    _tcsRelayTo.TrySetResult(0);
                     return;
                 }
                 _remoteSocket.BeginSend(_buffer, 0, ret, SocketFlags.None, OnRemoteSent, null);
             }
             catch (Exception e)
             {
-                _tcsRelayTo.SetException(e);
+                _tcsRelayTo.TrySetException(e);
             }
         }
 
@@ -139,11 +154,11 @@ namespace Any.Proxy
                     _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
                     return;
                 }
-                _tcsRelayTo.SetResult(0);
+                _tcsRelayTo.TrySetResult(0);
             }
             catch (Exception e)
             {
-                _tcsRelayTo.SetException(e);
+                _tcsRelayTo.TrySetException(e);
             }
         }
 
@@ -166,14 +181,14 @@ namespace Any.Proxy
                 int ret = _remoteSocket.EndReceive(ar);
                 if (ret <= 0)
                 {
-                    _tcsRelayFrom.SetResult(0);
+                    _tcsRelayFrom.TrySetResult(0);
                     return;
                 }
                 _socket.BeginSend(_remoteBuffer, 0, ret, SocketFlags.None, OnClientSent, null);
             }
             catch (Exception e)
             {
-                _tcsRelayFrom.SetException(e);
+                _tcsRelayFrom.TrySetException(e);
             }
         }
 
@@ -188,11 +203,11 @@ namespace Any.Proxy
                     _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, null);
                     return;
                 }
-                _tcsRelayFrom.SetResult(0);
+                _tcsRelayFrom.TrySetResult(0);
             }
             catch (Exception e)
             {
-                _tcsRelayFrom.SetException(e);
+                _tcsRelayFrom.TrySetException(e);
             }
         }
 
