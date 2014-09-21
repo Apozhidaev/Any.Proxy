@@ -37,13 +37,11 @@ namespace Any.Proxy.PortMap
         {
             await Task.Yield();
             using (socket)
-            using (var bridge = new TcpBridge(socket, _toPoint))
+            using (var bridge = new TcpBridge(Guid.NewGuid().ToString(), socket, _toPoint))
             {
                 await bridge.HandshakeAsync();
                 await bridge.RelayAsync();
             }
         }
-
-        
     }
 }

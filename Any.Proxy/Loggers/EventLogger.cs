@@ -11,9 +11,9 @@ namespace Any.Proxy.Loggers
             LogDB.Initialize();
         }
 
-        public Task WriteAsync(string summary, string description, EventType type, Guid transactionId)
+        public Task WriteAsync(string summary, string description, EventType type, string connectionId)
         {
-            return Task.Run(() => LogDB.Push(summary, description, DateTime.Now, type, transactionId));
+            return Task.Run(() => LogDB.Push(summary, description, DateTime.Now, type, connectionId));
         }
 
         public void Flush() { }

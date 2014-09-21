@@ -7,29 +7,33 @@ using System.Threading.Tasks;
 
 namespace Any.Proxy.HttpService
 {
-    public class HttpConnection : IDisposable
+    public class RemoteConnection : IDisposable
     {
         private const int Threshold = 100;
 
-        private static readonly Dictionary<string, HttpConnection> Connections =
-            new Dictionary<string, HttpConnection>();
+        private static readonly Dictionary<string, RemoteConnection> Connections =
+            new Dictionary<string, RemoteConnection>();
 
         private readonly byte[] _buffer;
         private readonly IPEndPoint _endPoint;
         private readonly Socket _socket;
         private DateTime _lastActive = DateTime.Now;
+        private readonly string _id;
 
-        private HttpConnection(string host, int port)
+        private RemoteConnection(string connectionId, string host, int port)
         {
             IPAddress address = Dns.GetHostAddresses(host)[0];
             _endPoint = new IPEndPoint(address, port);
             _socket = new Socket(_endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
             _buffer = new byte[_socket.ReceiveBufferSize];
-            Id = Guid.NewGuid().ToString();
+            _id = connectionId;
         }
 
-        public string Id { get; private set; }
+        public string Id
+        {
+            get { return _id; }
+        }
 
         public byte[] Buffer
         {
@@ -125,9 +129,9 @@ namespace Any.Proxy.HttpService
             _socket.Dispose();
         }
 
-        public static HttpConnection Open(string host, int port)
+        public static RemoteConnection Open(string connectionId, string host, int port)
         {
-            var connection = new HttpConnection(host, port);
+            var connection = new RemoteConnection(connectionId, host, port);
             lock (Connections)
             {
                 if (Connections.Count > Threshold)
@@ -146,7 +150,7 @@ namespace Any.Proxy.HttpService
             return connection;
         }
 
-        public static HttpConnection Find(string id)
+        public static RemoteConnection Find(string id)
         {
             lock (Connections)
             {

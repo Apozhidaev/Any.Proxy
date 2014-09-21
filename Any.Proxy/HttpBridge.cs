@@ -22,13 +22,14 @@ namespace Any.Proxy
         private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
         private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
 
-        private string _connectionId;
+        private readonly string _connectionId;
 
         private DateTime _lastActivity = DateTime.Now.AddYears(1);
         private readonly Timer _timer;
 
-        public HttpBridge(HttpBridgeElement config, Socket socket, string host, int port, bool isKeepAlive = false)
+        public HttpBridge(string connectionId, HttpBridgeElement config, Socket socket, string host, int port, bool isKeepAlive = false)
         {
+            _connectionId = connectionId;
             _socket = socket;
             _host = host;
             _port = port;
@@ -63,7 +64,7 @@ namespace Any.Proxy
         public Task HandshakeAsync()
         {
             var tcsHandshake = new TaskCompletionSource<int>();
-            _httpClient.PostAsync(_connectUri, new StringContent(String.Format("{0}:{1}", _host, _port)))
+            _httpClient.PostAsync(_connectUri, new StringContent(String.Format("{0}:{1}:{2}", _connectionId, _host, _port)))
                 .ContinueWith(_ =>
                 {
                     if (_.Exception != null)
@@ -74,7 +75,6 @@ namespace Any.Proxy
                     {
                         if (_.Result.StatusCode == HttpStatusCode.OK)
                         {
-                            _connectionId = _.Result.Content.ReadAsStringAsync().Result;
                             tcsHandshake.SetResult(0);
                         }
                         else

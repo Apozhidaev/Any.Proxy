@@ -67,7 +67,7 @@
     <Compile Include="HttpService\Configuration\HttpServiceElementCollection.cs" />
     <Compile Include="Http\Configuration\HttpElement.cs" />
     <Compile Include="Http\Configuration\HttpElementCollection.cs" />
-    <Compile Include="Http\HttpConnection.cs" />
+    <Compile Include="Http\Connection.cs" />
     <Compile Include="HttpAgent\HttpAgentModule.cs" />
     <Compile Include="Http\HttpModule.cs" />
     <Compile Include="Http\HttpModuleBase.cs" />
@@ -84,7 +84,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
     <Compile Include="HttpService\HttpServiceModule.cs" />
-    <Compile Include="HttpService\HttpConnection.cs" />
+    <Compile Include="HttpService\RemoteConnection.cs" />
     <Compile Include="SocketExtentions.cs" />
     <Compile Include="TcpBridge.cs" />
   </ItemGroup>

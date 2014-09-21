@@ -17,7 +17,7 @@ namespace Any.Proxy.Loggers
         {
             if (File.Exists(Filename)) return;
 
-            const string sqlLog = @"CREATE TABLE 'Logs' ('Id' INTEGER PRIMARY KEY  NOT NULL ,'Summary' TEXT NOT NULL ,'Description' TEXT NOT NULL ,'Time' DATETIME NOT NULL ,'Type' INTEGER NOT NULL ,'TransactionId' INTEGER NOT NULL )";
+            const string sqlLog = @"CREATE TABLE 'Logs' ('Id' INTEGER PRIMARY KEY  NOT NULL ,'Summary' TEXT NOT NULL ,'Description' TEXT NOT NULL ,'Time' DATETIME NOT NULL ,'Type' INTEGER NOT NULL ,'ConnectionId' INTEGER NOT NULL )";
 
             var previousConnectionState = ConnectionState.Closed;
             using (var connect = new SQLiteConnection(СonnectionString))
@@ -47,9 +47,9 @@ namespace Any.Proxy.Loggers
             }
         }
 
-        public static void Push(string summary, string description, DateTime time, EventType type, Guid transactionId)
+        public static void Push(string summary, string description, DateTime time, EventType type, string connectionId)
         {
-            const string sqlQuery = @"INSERT INTO Logs (Summary, Description, Time, Type, TransactionId) VALUES (@Summary, @Description, @Time, @Type, @TransactionId)";
+            const string sqlQuery = @"INSERT INTO Logs (Summary, Description, Time, Type, TransactionId) VALUES (@Summary, @Description, @Time, @Type, @ConnectionId)";
 
             var previousConnectionState = ConnectionState.Closed;
             using (var connect = new SQLiteConnection(СonnectionString))
@@ -95,8 +95,8 @@ namespace Any.Proxy.Loggers
                     command.Parameters.Add(new SQLiteParameter
                     {
                         DbType = DbType.Int32,
-                        ParameterName = "@TransactionId",
-                        Value = transactionId.GetHashCode()
+                        ParameterName = "@ConnectionId",
+                        Value = connectionId
                     });
 
                     command.ExecuteNonQuery();

@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Any.Proxy.Http
 {
     public abstract class HttpModuleBase : IProxyModule
     {
         private readonly IPAddress _address;
-        private readonly LinkedList<HttpConnection> _connections = new LinkedList<HttpConnection>();
+        private readonly LinkedList<Connection> _connections = new LinkedList<Connection>();
         private readonly int _port;
         public bool _isDisposed;
         protected Socket _listenSocket;
@@ -48,7 +45,7 @@ namespace Any.Proxy.Http
             Start();
         }
 
-        protected void AddConnection(HttpConnection connection)
+        protected void AddConnection(Connection connection)
         {
             if (!_connections.Contains(connection))
             {
@@ -56,7 +53,7 @@ namespace Any.Proxy.Http
             }
         }
 
-        protected void RemoveConnection(HttpConnection connection)
+        protected void RemoveConnection(Connection connection)
         {
             lock (_connections)
             {

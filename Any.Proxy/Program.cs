@@ -26,7 +26,7 @@ namespace Any.Proxy
             //});
 
             LogDB.Initialize();
-            LogDB.Push("dgd", "dgsdg", DateTime.Now, EventType.Error, Guid.NewGuid());
+            LogDB.Push("dgd", "dgsdg", DateTime.Now, EventType.Error, Guid.NewGuid().ToString());
 
             //var d = new DbFacade();
             //d.CreateDatabase();

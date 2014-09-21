@@ -82,15 +82,15 @@ namespace Any.Proxy.HttpService
         {
             string httpRequest = ReadAsString(context.Request);
             string[] sp = httpRequest.Split(':');
-            HttpConnection connection = HttpConnection.Open(sp[0], Int32.Parse(sp[1]));
+            RemoteConnection connection = RemoteConnection.Open(sp[0], sp[1], Int32.Parse(sp[2]));
             connection.HandshakeAsync().Wait();
-            CreateResponse(context.Response, HttpStatusCode.OK, connection.Id);
+            CreateResponse(context.Response, HttpStatusCode.OK);
         }
 
         private void HttpReceive(HttpListenerContext context)
         {
             string id = ReadAsString(context.Request);
-            HttpConnection connection = HttpConnection.Find(id);
+            RemoteConnection connection = RemoteConnection.Find(id);
             if (connection == null)
             {
                 CreateResponse(context.Response, HttpStatusCode.BadRequest);
@@ -112,7 +112,7 @@ namespace Any.Proxy.HttpService
             string[] sp = httpRequest.Split(':');
             string id = sp[0];
             byte[] httpResponse = Convert.FromBase64String(sp[1]);
-            HttpConnection connection = HttpConnection.Find(id);
+            RemoteConnection connection = RemoteConnection.Find(id);
             if (connection == null)
             {
                 CreateResponse(context.Response, HttpStatusCode.BadRequest);

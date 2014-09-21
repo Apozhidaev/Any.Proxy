@@ -5,10 +5,10 @@ using System.Text;
 
 namespace Any.Proxy.Http
 {
-    public class HttpConnection : IDisposable
+    public class Connection : IDisposable
     {
         private readonly byte[] _buffer = new byte[40960];
-        private readonly Action<HttpConnection> _destroyer;
+        private readonly Action<Connection> _destroyer;
         private readonly Socket _clientSocket;
         private StringDictionary _headerFields;
         private string _httpQuery = "";
@@ -17,16 +17,19 @@ namespace Any.Proxy.Http
         private string _requestedPath;
         private IBridge _bridge;
 
-        private readonly Func<string, int, bool, IBridge> _bridgeFactory;
+        private readonly Func<string, string, int, bool, IBridge> _bridgeFactory;
 
-        public HttpConnection(Socket clientSocket, Func<string, int, bool, IBridge> bridgeFactory, Action<HttpConnection> destroyer)
+        public Connection(Socket clientSocket, Func<string, string, int, bool, IBridge> bridgeFactory, Action<Connection> destroyer)
         {
             _httpRequestType = "";
             _httpVersion = "";
             _clientSocket = clientSocket;
             _destroyer = destroyer;
             _bridgeFactory = bridgeFactory;
+            Id = Guid.NewGuid().ToString();
         }
+
+        public string Id { get; private set; }
 
         public void Dispose()
         {
@@ -165,7 +168,7 @@ namespace Any.Proxy.Http
             try
             {
 
-                _bridge = _bridgeFactory(host, port, _headerFields.ContainsKey("Proxy-Connection") && _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
+                _bridge = _bridgeFactory(Id, host, port, _headerFields.ContainsKey("Proxy-Connection") && _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
                 _bridge.HandshakeAsync().ContinueWith(_ =>
                 {
                     if(_.Exception!=null)

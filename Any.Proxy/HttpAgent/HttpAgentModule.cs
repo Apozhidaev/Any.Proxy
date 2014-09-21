@@ -24,8 +24,8 @@ namespace Any.Proxy.HttpAgent
                 Socket NewSocket = _listenSocket.EndAccept(ar);
                 if (NewSocket != null)
                 {
-                    var NewClient = new HttpConnection(NewSocket, 
-                        (host, port, isKeepAlive) => new HttpBridge(_config.HttpBridge, NewSocket, host, port, isKeepAlive), RemoveConnection);
+                    var NewClient = new Connection(NewSocket,
+                        (connectionId, host, port, isKeepAlive) => new HttpBridge(connectionId, _config.HttpBridge, NewSocket, host, port, isKeepAlive), RemoveConnection);
                     AddConnection(NewClient);
                     NewClient.StartHandshake();
                 }
