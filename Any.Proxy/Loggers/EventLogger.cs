@@ -8,12 +8,12 @@ namespace Any.Proxy.Loggers
     {
         public EventLogger()
         {
-            LogDB.Initialize();
+            LogStore.Initialize();
         }
 
         public Task WriteAsync(string summary, string description, EventType type, string connectionId)
         {
-            return Task.Run(() => LogDB.Push(summary, description, DateTime.Now, type, connectionId));
+            return Task.Run(() => LogStore.Push(summary, description, DateTime.Now, type, connectionId));
         }
 
         public void Flush() { }

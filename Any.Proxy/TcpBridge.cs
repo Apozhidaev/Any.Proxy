@@ -14,6 +14,7 @@ namespace Any.Proxy
         private readonly byte[] _remoteBuffer;
         private readonly IPEndPoint _remotePoint;
         private readonly Socket _remoteSocket;
+        private readonly string _connectionId;
         private readonly Socket _socket;
         private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
         private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
@@ -24,6 +25,7 @@ namespace Any.Proxy
 
         public TcpBridge(string connectionId, Socket socket, IPEndPoint remotePoint, bool isKeepAlive = false)
         {
+            _connectionId = connectionId;
             _socket = socket;
             _remotePoint = remotePoint;
             _remoteSocket = new Socket(remotePoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
@@ -58,7 +60,7 @@ namespace Any.Proxy
                     }
                     catch (Exception e)
                     {
-                        //Log.Out.Error(e, "Dispose", GetHashCode());
+                        Log.Out.Error(e, _connectionId, "Dispose");
                     }
                     _remoteSocket.Dispose();
                     _isDisposed = true;
@@ -91,7 +93,7 @@ namespace Any.Proxy
                 }
                 catch (Exception e)
                 {
-                    //Log.Out.Error(e, "HandshakeAsync", GetHashCode());
+                    Log.Out.Error(e, _connectionId, "HandshakeAsync");
                     tcsHandshake.SetException(e);
                 }
             }, null);
@@ -112,7 +114,7 @@ namespace Any.Proxy
                 }
                 catch (Exception e)
                 {
-                    //Log.Out.Error(e, "RelayAsync", GetHashCode());
+                    Log.Out.Error(e, _connectionId, "RelayAsync");
                 }
                 
             });
@@ -144,7 +146,7 @@ namespace Any.Proxy
             }
             catch (Exception e)
             {
-                //Log.Out.Error(e, "OnClientReceive", GetHashCode());
+                Log.Out.Error(e, _connectionId, "OnClientReceive");
                 _tcsRelayTo.TrySetException(e);
             }
         }
@@ -164,7 +166,7 @@ namespace Any.Proxy
             }
             catch (Exception e)
             {
-                //Log.Out.Error(e, "OnRemoteSent", GetHashCode());
+                Log.Out.Error(e, _connectionId, "OnRemoteSent");
                 _tcsRelayTo.TrySetException(e);
             }
         }
@@ -195,7 +197,7 @@ namespace Any.Proxy
             }
             catch (Exception e)
             {
-                //Log.Out.Error(e, "OnRemoteReceive", GetHashCode());
+                Log.Out.Error(e, _connectionId, "OnRemoteReceive");
                 _tcsRelayFrom.TrySetException(e);
             }
         }
@@ -215,7 +217,7 @@ namespace Any.Proxy
             }
             catch (Exception e)
             {
-                //Log.Out.Error(e, "OnClientSent", GetHashCode());
+                Log.Out.Error(e, _connectionId, "OnClientSent");
                 _tcsRelayFrom.TrySetException(e);
             }
         }

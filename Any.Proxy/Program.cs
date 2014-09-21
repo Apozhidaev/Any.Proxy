@@ -25,16 +25,10 @@ namespace Any.Proxy
             //    x.SetServiceName("AnyProxy");
             //});
 
-            LogDB.Initialize();
-            LogDB.Push("dgd", "dgsdg", DateTime.Now, EventType.Error, Guid.NewGuid().ToString());
-
-            //var d = new DbFacade();
-            //d.CreateDatabase();
-
-            //var proxy = new Proxy();
-            //proxy.Start();
-            //Console.ReadKey();
-            //proxy.Stop();
+            var proxy = new Proxy();
+            proxy.Start();
+            Console.ReadKey();
+            proxy.Stop();
         }
     }
 }
