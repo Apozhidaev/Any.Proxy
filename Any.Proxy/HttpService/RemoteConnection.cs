@@ -4,6 +4,8 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using Any.Logs;
+using Any.Proxy.Loggers;
 
 namespace Any.Proxy.HttpService
 {
@@ -56,6 +58,7 @@ namespace Any.Proxy.HttpService
                 }
                 catch (Exception e)
                 {
+                    Log.Out.Error(e, _id, "HandshakeAsync");
                     tcsHandshake.SetException(e);
                 }
             }, null);
@@ -80,6 +83,7 @@ namespace Any.Proxy.HttpService
                 }
                 catch (Exception e)
                 {
+                    Log.Out.Error(e, _id, "RelayToAsync");
                     tcsRelayTo.SetException(e);
                 }
             }, null);
@@ -106,6 +110,7 @@ namespace Any.Proxy.HttpService
                     }
                     catch (Exception e)
                     {
+                        Log.Out.Error(e, _id, "RelayFromAsync");
                         tcsRelayFrom.SetException(e);
                     }
                 }, null);

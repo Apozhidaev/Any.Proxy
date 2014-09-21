@@ -169,13 +169,13 @@ namespace Any.Proxy.HttpService
                 context.StatusCode = (int) status;
                 context.Close();
             }
-            catch (Exception)
+            catch (Exception e1)
             {
                 try
                 {
                     context.Abort();
                 }
-                catch (Exception)
+                catch (Exception e2)
                 {
                 }
             }
