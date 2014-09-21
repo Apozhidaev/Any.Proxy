@@ -4,7 +4,6 @@ using System.Configuration;
 using System.Linq;
 using System.Net;
 using Any.Logs;
-using Any.Logs.Loggers;
 using Any.Proxy.Configuration;
 using Any.Proxy.Http;
 using Any.Proxy.Http.Configuration;
@@ -12,6 +11,7 @@ using Any.Proxy.HttpAgent;
 using Any.Proxy.HttpAgent.Configuration;
 using Any.Proxy.HttpService;
 using Any.Proxy.HttpService.Configuration;
+using Any.Proxy.Loggers;
 using Any.Proxy.PortMap;
 using Any.Proxy.PortMap.Configuration;
 
@@ -23,7 +23,7 @@ namespace Any.Proxy
 
         public void Start()
         {
-            Log.Out.InitializeDefault();
+            Log.Initialize(new EventLogger());
             var configuration = (ProxySection) ConfigurationManager.GetSection("proxy");
 
             foreach (var config in configuration.PortMap.OfType<PortMapElement>())

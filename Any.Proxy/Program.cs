@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using Any.Proxy.HttpAgent;
+using Any.Proxy.Loggers;
 using Topshelf;
 
 namespace Any.Proxy
@@ -24,10 +25,16 @@ namespace Any.Proxy
             //    x.SetServiceName("AnyProxy");
             //});
 
-            var proxy = new Proxy();
-            proxy.Start();
-            Console.ReadKey();
-            proxy.Stop();
+            LogDB.Initialize();
+            LogDB.Push("dgd", "dgsdg", DateTime.Now, EventType.Error, Guid.NewGuid());
+
+            //var d = new DbFacade();
+            //d.CreateDatabase();
+
+            //var proxy = new Proxy();
+            //proxy.Start();
+            //Console.ReadKey();
+            //proxy.Stop();
         }
     }
 }
