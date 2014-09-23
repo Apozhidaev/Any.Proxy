@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.Text;
+using System.Xml.Linq;
 using Any.Logs.Extentions;
 
 namespace Any.Proxy.Loggers
@@ -10,28 +12,18 @@ namespace Any.Proxy.Loggers
 
         private readonly static string _filename = Path.Combine(Environment.CurrentDirectory, "log.xml");
 
-        public static void Initialize()
+        public static void Push(string summary, string description, DateTime time, EventType type, string context)
         {
-            if (File.Exists(_filename)) return;
-            try
-            {
-                File.AppendAllText(_filename, "<?xml version=\"1.0\" encoding=\"utf-8\" ?>");
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.GetFullMessage());
-            }
-            
-        }
-
-        public static void Push(string summary, string description, DateTime time, EventType type, string connectionId)
-        {
-            const string log = "{0}<log summary=\"{1}\" description=\"{2}\" time=\"{3}\" type=\"{4}\" connectionId=\"{5}\"/>";
             lock (_sync)
             {
+                var log = new StringBuilder();
+                log.AppendFormat("{0}<log time=\"{1}\" type=\"{2}\" context=\"{3}\">", Environment.NewLine, time, type, context);
+                log.AppendFormat("{0}{1}", Environment.NewLine, new XElement("summary", summary));
+                log.AppendFormat("{0}{1}", Environment.NewLine, new XElement("description", description));
+                log.AppendFormat("{0}</log>", Environment.NewLine);
                 try
                 {
-                    File.AppendAllText(_filename, String.Format(log, Environment.NewLine, summary, description, time, type, connectionId));
+                    File.AppendAllText(_filename, log.ToString());
                 }
                 catch (Exception e)
                 {

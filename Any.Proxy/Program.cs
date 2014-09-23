@@ -25,10 +25,13 @@ namespace Any.Proxy
             //    x.SetServiceName("AnyProxy");
             //});
 
+            
+
             var proxy = new Proxy();
             proxy.Start();
+            AppDomain.CurrentDomain.ProcessExit += (sender, e) => proxy.Stop();
+            AppDomain.CurrentDomain.UnhandledException += (sender, e) => proxy.Stop();
             Console.ReadKey();
-            proxy.Stop();
         }
     }
 }
