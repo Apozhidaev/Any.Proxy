@@ -26,5 +26,15 @@ namespace Any.Proxy.Loggers
             summary = summary.Format(values);
             log.WriteAsync<EventLogger>(logger => logger.WriteAsync(summary, description, EventType.Info, context));
         }
+
+        public static void BeginInfo(this Log log, string context, string description, string summary, params object[] values)
+        {
+            log.Info(context, description, String.Format("Begin {0}", summary), values);
+        }
+
+        public static void EndInfo(this Log log, string context, string description, string summary, params object[] values)
+        {
+            log.Info(context, description, String.Format("End {0}", summary), values);
+        }
     }
 }

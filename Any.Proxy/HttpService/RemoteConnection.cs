@@ -117,6 +117,7 @@ namespace Any.Proxy.HttpService
             }
             catch (Exception e)
             {
+                Log.Out.Error(e, _id, "RelayFromAsync");
                 tcsRelayFrom.SetException(e);
             }
             return tcsRelayFrom.Task;

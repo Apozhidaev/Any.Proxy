@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Net;
-using Any.Proxy.HttpAgent;
-using Any.Proxy.Loggers;
-using Topshelf;
 
 namespace Any.Proxy
 {
@@ -31,6 +27,7 @@ namespace Any.Proxy
             proxy.Start();
             AppDomain.CurrentDomain.ProcessExit += (sender, e) => proxy.Stop();
             AppDomain.CurrentDomain.UnhandledException += (sender, e) => proxy.Stop();
+            Console.WriteLine("Working...");
             Console.ReadKey();
         }
     }
