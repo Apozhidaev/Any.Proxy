@@ -38,7 +38,6 @@ namespace Any.Proxy.Http
 
         protected void Restart()
         {
-            //If we weren't listening, do nothing
             if (_listenSocket == null)
                 return;
             _listenSocket.Close();

@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Net;
 using System.Net.Sockets;
 using Any.Proxy.Http.Configuration;
 
@@ -17,13 +15,12 @@ namespace Any.Proxy.Http
         {
             try
             {
-                Socket NewSocket = _listenSocket.EndAccept(ar);
-                if (NewSocket != null)
+                Socket socket = _listenSocket.EndAccept(ar);
+                if (socket != null)
                 {
-                    var NewClient = new Connection(NewSocket,
-                        (connectionId, host, port, isKeepAlive) => new TcpBridge(connectionId, NewSocket, host, port, isKeepAlive), RemoveConnection);
-                    AddConnection(NewClient);
-                    NewClient.StartHandshake();
+                    var connection = new Connection(socket, (connectionId, host, port, isKeepAlive) => new TcpBridge(connectionId, socket, host, port, isKeepAlive), RemoveConnection);
+                    AddConnection(connection);
+                    connection.StartHandshake();
                 }
             }
             catch
@@ -31,7 +28,6 @@ namespace Any.Proxy.Http
             }
             try
             {
-                //Restart Listening
                 _listenSocket.BeginAccept(OnAccept, _listenSocket);
             }
             catch
