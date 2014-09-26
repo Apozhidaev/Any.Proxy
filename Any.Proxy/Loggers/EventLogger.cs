@@ -8,7 +8,7 @@ namespace Any.Proxy.Loggers
     {
         public Task WriteAsync(string summary, string description, EventType type, string connectionId)
         {
-            return Task.Run(() => LogStore.Push(summary, description, DateTime.Now, type, connectionId));
+            return Task.Run(() => LogStore.Push(summary, description, DateTime.UtcNow, type, connectionId));
         }
 
         public void Flush() { }

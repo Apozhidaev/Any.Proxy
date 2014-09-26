@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using System.Xml.Linq;
@@ -17,7 +18,7 @@ namespace Any.Proxy.Loggers
             lock (_sync)
             {
                 var log = new StringBuilder();
-                log.AppendFormat("{0}<log time=\"{1}\" type=\"{2}\" context=\"{3}\">", Environment.NewLine, time, type, context);
+                log.AppendFormat("{0}<log time=\"{1}\" type=\"{2}\" context=\"{3}\">", Environment.NewLine, time.ToString(CultureInfo.InvariantCulture), (int)type, context);
                 log.AppendFormat("{0}{1}", Environment.NewLine, new XElement("summary", summary));
                 log.AppendFormat("{0}{1}", Environment.NewLine, new XElement("description", description));
                 log.AppendFormat("{0}</log>", Environment.NewLine);
