@@ -177,6 +177,7 @@ namespace Any.Proxy.Http
                     port = 80;
                 }
             }
+            Log.Out.Info(_id, query, host);
             try
             {
 
