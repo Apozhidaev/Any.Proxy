@@ -73,6 +73,7 @@ namespace Any.Proxy
             {
                 listener.Value.Dispose();
             }
+            _listeners.Clear();
         }
 
         public static IPAddress GetIP(string host)
