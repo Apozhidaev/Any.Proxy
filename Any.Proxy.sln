@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Any.Proxy", "Any.Proxy\Any.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Any.Proxy.Remote", "Any.Proxy.Remote\Any.Proxy.Remote.csproj", "{C5939047-2D3B-4266-B993-85BEF1400D85}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Any.Proxy.Logs", "Any.Proxy.Logs\Any.Proxy.Logs.csproj", "{2C0E79CE-6547-4F18-BFE8-AC838639680A}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -23,10 +21,6 @@ Global
 		{C5939047-2D3B-4266-B993-85BEF1400D85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C5939047-2D3B-4266-B993-85BEF1400D85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C5939047-2D3B-4266-B993-85BEF1400D85}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2C0E79CE-6547-4F18-BFE8-AC838639680A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2C0E79CE-6547-4F18-BFE8-AC838639680A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2C0E79CE-6547-4F18-BFE8-AC838639680A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2C0E79CE-6547-4F18-BFE8-AC838639680A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

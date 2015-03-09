@@ -1,8 +1,11 @@
 ﻿using System.Configuration;
 using Any.Proxy.Http.Configuration;
 using Any.Proxy.HttpAgent.Configuration;
-using Any.Proxy.HttpService.Configuration;
+using Any.Proxy.HttpBridgeService.Configuration;
+using Any.Proxy.Https.Configuration;
+using Any.Proxy.HttpsAgent.Configuration;
 using Any.Proxy.PortMap.Configuration;
+using Any.Proxy.Redirect.Configuration;
 
 namespace Any.Proxy.Configuration
 {
@@ -22,6 +25,13 @@ namespace Any.Proxy.Configuration
                 null,
                 ConfigurationPropertyOptions.None);
 
+        private static readonly ConfigurationProperty HttpsProperty =
+            new ConfigurationProperty(
+                "https",
+                typeof(HttpsElementCollection),
+                null,
+                ConfigurationPropertyOptions.None);
+
         private static readonly ConfigurationProperty HttpAgentProperty =
             new ConfigurationProperty(
                 "httpAgent",
@@ -29,19 +39,37 @@ namespace Any.Proxy.Configuration
                 null,
                 ConfigurationPropertyOptions.None);
 
-        private static readonly ConfigurationProperty HttpServiceProperty =
+        private static readonly ConfigurationProperty HttpsAgentProperty =
             new ConfigurationProperty(
-                "httpService",
-                typeof(HttpServiceElementCollection),
+                "httpsAgent",
+                typeof(HttpsAgentElementCollection),
                 null,
                 ConfigurationPropertyOptions.None);
+
+        private static readonly ConfigurationProperty HttpBridgeServiceProperty =
+           new ConfigurationProperty(
+               "httpBridgeService",
+               typeof(HttpBridgeServiceElementCollection),
+               null,
+               ConfigurationPropertyOptions.None);
+
+        private static readonly ConfigurationProperty RedirectProperty =
+          new ConfigurationProperty(
+              "redirect",
+              typeof(RedirectElementCollection),
+              null,
+              ConfigurationPropertyOptions.None);
+
 
         public ProxySection()
         {
             base.Properties.Add(PortMapProperty);
             base.Properties.Add(HttpProperty);
+            base.Properties.Add(HttpsProperty);
             base.Properties.Add(HttpAgentProperty);
-            base.Properties.Add(HttpServiceProperty);
+            base.Properties.Add(HttpsAgentProperty);
+            base.Properties.Add(HttpBridgeServiceProperty);
+            base.Properties.Add(RedirectProperty);
         }
 
 
@@ -58,6 +86,12 @@ namespace Any.Proxy.Configuration
             get { return (HttpElementCollection)this[HttpProperty]; }
         }
 
+        [ConfigurationProperty("https", IsRequired = false)]
+        public HttpsElementCollection Https
+        {
+            get { return (HttpsElementCollection)this[HttpsProperty]; }
+        }
+
 
         [ConfigurationProperty("httpAgent", IsRequired = false)]
         public HttpAgentElementCollection HttpAgent
@@ -65,11 +99,22 @@ namespace Any.Proxy.Configuration
             get { return (HttpAgentElementCollection)this[HttpAgentProperty]; }
         }
 
-
-        [ConfigurationProperty("httpService", IsRequired = false)]
-        public HttpServiceElementCollection HttpService
+        [ConfigurationProperty("httpsAgent", IsRequired = false)]
+        public HttpsAgentElementCollection HttpsAgent
         {
-            get { return (HttpServiceElementCollection)this[HttpServiceProperty]; }
+            get { return (HttpsAgentElementCollection)this[HttpsAgentProperty]; }
+        }
+
+        [ConfigurationProperty("httpBridgeService", IsRequired = false)]
+        public HttpBridgeServiceElementCollection HttpBridgeService
+        {
+            get { return (HttpBridgeServiceElementCollection)this[HttpBridgeServiceProperty]; }
+        }
+
+        [ConfigurationProperty("redirect", IsRequired = false)]
+        public RedirectElementCollection Redirect
+        {
+            get { return (RedirectElementCollection)this[RedirectProperty]; }
         }
     }
 }

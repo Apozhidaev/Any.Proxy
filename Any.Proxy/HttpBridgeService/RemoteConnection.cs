@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Any.Logs;
 using Any.Proxy.Loggers;
 
-namespace Any.Proxy.HttpService
+namespace Any.Proxy.HttpBridgeService
 {
     public class RemoteConnection : IDisposable
     {

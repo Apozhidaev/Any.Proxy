@@ -15,22 +15,22 @@ namespace Any.Proxy.Loggers
 
         public static void Push(string summary, string description, DateTime time, EventType type, string context)
         {
-            lock (_sync)
-            {
-                var log = new StringBuilder();
-                log.AppendFormat("{0}<log time=\"{1}\" type=\"{2}\" context=\"{3}\">", Environment.NewLine, time.ToString(CultureInfo.InvariantCulture), (int)type, context);
-                log.AppendFormat("{0}{1}", Environment.NewLine, new XElement("summary", summary));
-                log.AppendFormat("{0}{1}", Environment.NewLine, new XElement("description", description));
-                log.AppendFormat("{0}</log>", Environment.NewLine);
-                try
-                {
-                    File.AppendAllText(_filename, log.ToString());
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.GetFullMessage());
-                }
-            }
+            //lock (_sync)
+            //{
+            //    var log = new StringBuilder();
+            //    log.AppendFormat("{0}<log time=\"{1}\" type=\"{2}\" context=\"{3}\">", Environment.NewLine, time.ToString(CultureInfo.InvariantCulture), (int)type, context);
+            //    log.AppendFormat("{0}{1}", Environment.NewLine, new XElement("summary", summary));
+            //    log.AppendFormat("{0}{1}", Environment.NewLine, new XElement("description", description));
+            //    log.AppendFormat("{0}</log>", Environment.NewLine);
+            //    try
+            //    {
+            //        File.AppendAllText(_filename, log.ToString());
+            //    }
+            //    catch (Exception e)
+            //    {
+            //        Console.WriteLine(e.GetFullMessage());
+            //    }
+            //}
         }
     }
 }

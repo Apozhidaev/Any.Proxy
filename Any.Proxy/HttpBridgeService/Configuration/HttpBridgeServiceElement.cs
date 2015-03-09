@@ -1,8 +1,8 @@
 ﻿using System.Configuration;
 
-namespace Any.Proxy.HttpService.Configuration
+namespace Any.Proxy.HttpBridgeService.Configuration
 {
-    public class HttpServiceElement : ConfigurationElement
+    public class HttpBridgeServiceElement : ConfigurationElement
     {
         [ConfigurationProperty("name", IsRequired = true)]
         public string Name

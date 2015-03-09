@@ -53,13 +53,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="HttpsAgent\Configuration\HttpsAgentElement.cs" />
+    <Compile Include="HttpsAgent\Configuration\HttpsAgentElementCollection.cs" />
+    <Compile Include="HttpsAgent\HttpAgentModule.cs" />
+    <Compile Include="Https\Configuration\HttpsElement.cs" />
+    <Compile Include="Https\Configuration\HttpsElementCollection.cs" />
+    <Compile Include="Https\HttpsConnection.cs" />
+    <Compile Include="Https\HttpsModule.cs" />
+    <Compile Include="Https\HttpsModuleBase.cs" />
     <Compile Include="Loggers\LogStore.cs" />
     <Compile Include="HttpAgent\Configuration\HttpAgentElement.cs" />
     <Compile Include="HttpAgent\Configuration\HttpAgentElementCollection.cs" />
     <Compile Include="Configuration\HttpBridgeElement.cs" />
     <Compile Include="HttpBridge.cs" />
-    <Compile Include="HttpService\Configuration\HttpServiceElement.cs" />
-    <Compile Include="HttpService\Configuration\HttpServiceElementCollection.cs" />
+    <Compile Include="HttpBridgeService\Configuration\HttpBridgeServiceElement.cs" />
+    <Compile Include="HttpBridgeService\Configuration\HttpBridgeServiceElementCollection.cs" />
     <Compile Include="Http\Configuration\HttpElement.cs" />
     <Compile Include="Http\Configuration\HttpElementCollection.cs" />
     <Compile Include="Http\Connection.cs" />
@@ -78,8 +86,11 @@
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
-    <Compile Include="HttpService\HttpServiceModule.cs" />
-    <Compile Include="HttpService\RemoteConnection.cs" />
+    <Compile Include="HttpBridgeService\HttpBridgeServiceModule.cs" />
+    <Compile Include="HttpBridgeService\RemoteConnection.cs" />
+    <Compile Include="Redirect\Configuration\RedirectElement.cs" />
+    <Compile Include="Redirect\Configuration\RedirectElementCollection.cs" />
+    <Compile Include="Redirect\RedirectModule.cs" />
     <Compile Include="SocketExtentions.cs" />
     <Compile Include="TcpBridge.cs" />
   </ItemGroup>

@@ -4,16 +4,16 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Any.Logs;
-using Any.Proxy.HttpService.Configuration;
+using Any.Proxy.HttpBridgeService.Configuration;
 using Any.Proxy.Loggers;
 
-namespace Any.Proxy.HttpService
+namespace Any.Proxy.HttpBridgeService
 {
-    public class HttpServiceModule : IProxyModule
+    public class HttpBridgeServiceModule : IProxyModule
     {
         private readonly HttpListener _listener;
 
-        public HttpServiceModule(HttpServiceElement config)
+        public HttpBridgeServiceModule(HttpBridgeServiceElement config)
         {
             _listener = new HttpListener();
             var prefixes = config.Prefixes.Split(',');
