@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -12,13 +14,24 @@ namespace Any.Proxy.Redirect
         private readonly Uri _toUrl;
         private readonly HttpClient _client;
         private readonly HttpListener _listener;
+        private readonly Dictionary<string, Dictionary<string, string>> _replaces = new Dictionary<string, Dictionary<string, string>>();
 
         public RedirectModule(RedirectElement config)
         {
-            _client = new HttpClient();
+            var wrh = new WebRequestHandler();
+            wrh.AutomaticDecompression = DecompressionMethods.GZip;
+            _client = new HttpClient(wrh);
             _listener = new HttpListener();
             _listener.Prefixes.Add(config.FromUrl);
             _toUrl = new Uri(config.ToUrl);
+            foreach (var result in config.Replace.Cast<ReplaceElement>())
+            {
+                if (!_replaces.ContainsKey(result.MediaType))
+                {
+                    _replaces.Add(result.MediaType, new Dictionary<string, string>());
+                }
+                _replaces[result.MediaType].Add(result.OldValue, result.NewValue);
+            }
         }
 
         public void Dispose()
@@ -63,6 +76,7 @@ namespace Any.Proxy.Redirect
                     Host = _toUrl.Host,
                     Port = _toUrl.Port
                 };
+                
                 var res = await _client.GetAsync(url.Uri);
                 context.Response.StatusCode = (int)res.StatusCode;
                 foreach (var httpResponseHeader in res.Content.Headers)
@@ -73,18 +87,19 @@ namespace Any.Proxy.Redirect
                     }
                 }
                 byte[] bytes = await res.Content.ReadAsByteArrayAsync();
-                //if (res.Content.Headers.ContentType.MediaType == "text/html")
-                //{
-                //    var temp = Encoding.UTF8.GetString(bytes);
-                //    temp = temp.Replace("habrastorage.org", "hashabc.com:50000").Replace("habrahabr.ru", "hashabc.com");
-                //    bytes = Encoding.UTF8.GetBytes(temp);
-                //}
+                if (_replaces.ContainsKey(res.Content.Headers.ContentType.MediaType))
+                {
+                    var temp = Encoding.UTF8.GetString(bytes);
+                    temp = _replaces[res.Content.Headers.ContentType.MediaType]
+                        .Aggregate(temp, (current, replace) => current.Replace(replace.Key, replace.Value));
+                    bytes = Encoding.UTF8.GetBytes(temp);
+                }
                 context.Response.ContentLength64 = bytes.Length;
                 await context.Response.OutputStream.WriteAsync(bytes, 0, bytes.Length);
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.Message);
+                Console.WriteLine("{0} - {1}",e.Message, e.StackTrace);
             }
         }
     }

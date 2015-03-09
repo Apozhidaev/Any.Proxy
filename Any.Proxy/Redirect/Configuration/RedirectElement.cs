@@ -4,6 +4,18 @@ namespace Any.Proxy.Redirect.Configuration
 {
     public class RedirectElement : ConfigurationElement
     {
+        private static readonly ConfigurationProperty ReplaceProperty =
+            new ConfigurationProperty(
+                "replaces",
+                typeof(ReplaceElementCollection),
+                null,
+                ConfigurationPropertyOptions.None);
+
+        public RedirectElement()
+        {
+            base.Properties.Add(ReplaceProperty);
+        }
+
         [ConfigurationProperty("name", IsRequired = true)]
         public string Name
         {
@@ -20,6 +32,12 @@ namespace Any.Proxy.Redirect.Configuration
         public string ToUrl
         {
             get { return (string)this["toUrl"]; }
+        }
+
+        [ConfigurationProperty("replaces", IsRequired = false)]
+        public ReplaceElementCollection Replace
+        {
+            get { return (ReplaceElementCollection)this[ReplaceProperty]; }
         }
     }
 }

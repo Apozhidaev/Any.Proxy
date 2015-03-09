@@ -88,7 +88,9 @@
     <Compile Include="Proxy.cs" />
     <Compile Include="HttpBridgeService\HttpBridgeServiceModule.cs" />
     <Compile Include="HttpBridgeService\RemoteConnection.cs" />
+    <Compile Include="Redirect\Configuration\ReplaceElement.cs" />
     <Compile Include="Redirect\Configuration\RedirectElement.cs" />
+    <Compile Include="Redirect\Configuration\ReplaceElementCollection.cs" />
     <Compile Include="Redirect\Configuration\RedirectElementCollection.cs" />
     <Compile Include="Redirect\RedirectModule.cs" />
     <Compile Include="SocketExtentions.cs" />
