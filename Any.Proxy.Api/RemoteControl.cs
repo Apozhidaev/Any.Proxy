@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Configuration;
-using Any.Proxy.Api;
-using Any.Proxy.Configuration;
+using Any.Proxy.Api.Configuration;
 using Microsoft.Owin.Hosting;
 
-namespace Any.Proxy
+namespace Any.Proxy.Api
 {
     public class RemoteControl
     {

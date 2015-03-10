@@ -1,10 +1,11 @@
-﻿using Any.Proxy.Configuration;
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Any.Proxy.Configuration;
+using Any.Proxy.HttpBridgeService.Configuration;
 
 namespace Any.Proxy
 {
@@ -27,7 +28,7 @@ namespace Any.Proxy
         private DateTime _lastActivity = DateTime.Now.AddYears(1);
         private readonly Timer _timer;
 
-        public HttpBridge(string connectionId, HttpBridgeElement config, Socket socket, string host, int port, bool isKeepAlive = false)
+        public HttpBridge(string connectionId, HttpBridgeConfig config, Socket socket, string host, int port, bool isKeepAlive = false)
         {
             _connectionId = connectionId;
             _socket = socket;

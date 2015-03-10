@@ -1,7 +1,6 @@
-﻿using System;
-using Topshelf;
+﻿using Topshelf;
 
-namespace Any.Proxy
+namespace Any.Proxy.Api
 {
     public class Program
     {
@@ -18,7 +17,7 @@ namespace Any.Proxy
                 x.RunAsLocalSystem();
 
                 x.SetDescription("Any Proxy");
-                x.SetDisplayName("AnyProxy");
+                x.SetDisplayName("Any Proxy");
                 x.SetServiceName("AnyProxy");
             });
         }

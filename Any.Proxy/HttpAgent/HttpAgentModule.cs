@@ -7,9 +7,9 @@ namespace Any.Proxy.HttpAgent
 {
     public class HttpAgentModule : HttpModuleBase
     {
-        private readonly HttpAgentElement _config;
+        private readonly HttpAgentConfig _config;
 
-        public HttpAgentModule(HttpAgentElement config)
+        public HttpAgentModule(HttpAgentConfig config)
             : base(config.Host, config.Port)
         {
             _config = config;

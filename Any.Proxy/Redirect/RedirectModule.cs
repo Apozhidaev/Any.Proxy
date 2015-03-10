@@ -16,7 +16,7 @@ namespace Any.Proxy.Redirect
         private readonly HttpListener _listener;
         private readonly Dictionary<string, Dictionary<string, string>> _replaces = new Dictionary<string, Dictionary<string, string>>();
 
-        public RedirectModule(RedirectElement config)
+        public RedirectModule(RedirectConfig config)
         {
             var wrh = new WebRequestHandler();
             wrh.AutomaticDecompression = DecompressionMethods.GZip;
@@ -24,13 +24,16 @@ namespace Any.Proxy.Redirect
             _listener = new HttpListener();
             _listener.Prefixes.Add(config.FromUrl);
             _toUrl = new Uri(config.ToUrl);
-            foreach (var result in config.Replace.Cast<ReplaceElement>())
+            if (config.Replace != null)
             {
-                if (!_replaces.ContainsKey(result.MediaType))
+                foreach (var result in config.Replace)
                 {
-                    _replaces.Add(result.MediaType, new Dictionary<string, string>());
+                    if (!_replaces.ContainsKey(result.MediaType))
+                    {
+                        _replaces.Add(result.MediaType, new Dictionary<string, string>());
+                    }
+                    _replaces[result.MediaType].Add(result.OldValue, result.NewValue);
                 }
-                _replaces[result.MediaType].Add(result.OldValue, result.NewValue);
             }
         }
 
@@ -76,7 +79,7 @@ namespace Any.Proxy.Redirect
                     Host = _toUrl.Host,
                     Port = _toUrl.Port
                 };
-                
+
                 var res = await _client.GetAsync(url.Uri);
                 context.Response.StatusCode = (int)res.StatusCode;
                 foreach (var httpResponseHeader in res.Content.Headers)
@@ -99,7 +102,7 @@ namespace Any.Proxy.Redirect
             }
             catch (Exception e)
             {
-                Console.WriteLine("{0} - {1}",e.Message, e.StackTrace);
+                Console.WriteLine("{0} - {1}", e.Message, e.StackTrace);
             }
         }
     }

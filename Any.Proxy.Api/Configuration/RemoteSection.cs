@@ -1,6 +1,6 @@
 ﻿using System.Configuration;
 
-namespace Any.Proxy.Configuration
+namespace Any.Proxy.Api.Configuration
 {
     public class RemoteSection : ConfigurationSection
     {

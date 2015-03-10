@@ -13,7 +13,7 @@ namespace Any.Proxy.HttpBridgeService
     {
         private readonly HttpListener _listener;
 
-        public HttpBridgeServiceModule(HttpBridgeServiceElement config)
+        public HttpBridgeServiceModule(HttpBridgeServiceConfig config)
         {
             _listener = new HttpListener();
             var prefixes = config.Prefixes.Split(',');

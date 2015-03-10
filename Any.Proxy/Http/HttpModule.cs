@@ -6,7 +6,7 @@ namespace Any.Proxy.Http
 {
     public class HttpModule : HttpModuleBase
     {
-        public HttpModule(HttpElement config)
+        public HttpModule(HttpConfig config)
             :base(config.Host,config.Port)
         {
         }

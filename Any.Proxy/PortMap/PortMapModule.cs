@@ -11,7 +11,7 @@ namespace Any.Proxy.PortMap
         private readonly TcpListener _listener;
         private readonly IPEndPoint _toPoint;
 
-        public PortMapModule(PortMapElement config)
+        public PortMapModule(PortMapConfig config)
         {
             var fromPoint=new IPEndPoint(Proxy.GetIP(config.FromHost), config.FromPort);
             _toPoint = new IPEndPoint(Proxy.GetIP(config.ToHost), config.ToPort);
