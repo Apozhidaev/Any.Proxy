@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{5370B5BB-21CC-4A0F-9CC7-A44F8BC40D10}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Ap.Proxy</RootNamespace>
+    <AssemblyName>Ap.Proxy</AssemblyName>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Ap.Log">
+      <HintPath>..\packages\Ap.Log.1.0.0\lib\Ap.Log.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Net.Http.WebRequest" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Configuration\ProxyConfig.cs" />
+    <Compile Include="HttpAgent\Configuration\HttpAgentConfig.cs" />
+    <Compile Include="HttpAgent\HttpAgentModule.cs" />
+    <Compile Include="HttpBridge.cs" />
+    <Compile Include="Configuration\HttpBridgeConfig.cs" />
+    <Compile Include="HttpBridgeService\Configuration\HttpBridgeServiceConfig.cs" />
+    <Compile Include="HttpBridgeService\HttpBridgeServiceModule.cs" />
+    <Compile Include="HttpBridgeService\RemoteConnection.cs" />
+    <Compile Include="HttpsAgent\Configuration\HttpsAgentConfig.cs" />
+    <Compile Include="HttpsAgent\HttpAgentModule.cs" />
+    <Compile Include="Https\Configuration\HttpsConfig.cs" />
+    <Compile Include="Https\HttpsConnection.cs" />
+    <Compile Include="Https\HttpsModule.cs" />
+    <Compile Include="Https\HttpsModuleBase.cs" />
+    <Compile Include="Http\Configuration\HttpConfig.cs" />
+    <Compile Include="Http\Connection.cs" />
+    <Compile Include="Http\HttpModule.cs" />
+    <Compile Include="Http\HttpModuleBase.cs" />
+    <Compile Include="IBridge.cs" />
+    <Compile Include="IProxyModule.cs" />
+    <Compile Include="Loggers\EventLogger.cs" />
+    <Compile Include="Loggers\EventType.cs" />
+    <Compile Include="Loggers\LogExtensions.cs" />
+    <Compile Include="Loggers\LogStore.cs" />
+    <Compile Include="PortMap\Configuration\PortMapConfig.cs" />
+    <Compile Include="PortMap\PortMapModule.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Proxy.cs" />
+    <Compile Include="Redirect\Configuration\RedirectConfig.cs" />
+    <Compile Include="Redirect\Configuration\ReplaceConfig.cs" />
+    <Compile Include="Redirect\RedirectModule.cs" />
+    <Compile Include="SocketExtentions.cs" />
+    <Compile Include="TcpBridge.cs" />
+    <Compile Include="XmlHelper.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

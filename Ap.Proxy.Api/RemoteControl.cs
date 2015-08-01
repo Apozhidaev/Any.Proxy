@@ -1,0 +1,44 @@
+﻿using System;
+using System.Configuration;
+using Ap.Proxy.Api.Configuration;
+using Microsoft.Owin.Hosting;
+
+namespace Ap.Proxy.Api
+{
+    public class RemoteControl
+    {
+        private static readonly Ap.Proxy.Proxy _proxy = new Ap.Proxy.Proxy();
+        public static Ap.Proxy.Proxy Proxy
+        {
+            get { return _proxy; }
+        }
+
+        public static string Password { get; private set; }
+
+        private readonly RemoteSection _config;
+        private IDisposable _webApp;
+
+        public RemoteControl()
+        {
+            _config = (RemoteSection)ConfigurationManager.GetSection("remote");
+            Password = _config.Password;
+        }
+
+        public void Start()
+        {
+            _proxy.Start();
+            var startOptions = new StartOptions();
+            foreach (var url in _config.Prefixes.Split(','))
+            {
+                startOptions.Urls.Add(url);
+            }
+            _webApp = WebApp.Start<Startup>(startOptions);
+        }
+
+        public void Stop()
+        {
+            _webApp.Dispose();
+            _proxy.Stop();
+        }
+    }
+}
