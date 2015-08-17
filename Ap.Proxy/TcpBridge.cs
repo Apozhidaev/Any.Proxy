@@ -19,8 +19,6 @@ namespace Ap.Proxy
         private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
         private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
 
-        private DateTime _lastActivity = DateTime.Now.AddYears(1);
-        private readonly Timer _timer;
         private bool _isDisposed = false;
 
         public TcpBridge(string connectionId, Socket socket, IPEndPoint remotePoint, bool isKeepAlive = false)
@@ -35,8 +33,6 @@ namespace Ap.Proxy
             }
             _buffer = new byte[socket.ReceiveBufferSize];
             _remoteBuffer = new byte[_remoteSocket.ReceiveBufferSize];
-            _timer = new Timer(_ => DoWork());
-            _timer.Change(1000, 100);
         }
 
         public TcpBridge(string connectionId, Socket socket, string host, int port, bool isKeepAlive = false)
@@ -48,7 +44,6 @@ namespace Ap.Proxy
         {
             _tcsRelayFrom.TrySetResult(0);
             _tcsRelayTo.TrySetResult(0);
-            _timer.Dispose();
             lock (_remoteSocket)
             {
                 if (!_isDisposed)
@@ -69,14 +64,6 @@ namespace Ap.Proxy
             
             
 
-        }
-
-        private void DoWork()
-        {
-            if (DateTime.Now > _lastActivity && DateTime.Now - _lastActivity > TimeSpan.FromSeconds(1))
-            {
-                Dispose();
-            }
         }
 
         #region Handshake
@@ -126,7 +113,6 @@ namespace Ap.Proxy
 
         public Task RelayToAsync()
         {
-            _lastActivity = DateTime.Now;
             _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
             return _tcsRelayTo.Task;
         }
@@ -135,7 +121,6 @@ namespace Ap.Proxy
         {
             try
             {
-                _lastActivity = DateTime.Now;
                 int ret = _socket.EndReceive(ar);
                 if (ret <= 0)
                 {
@@ -155,7 +140,6 @@ namespace Ap.Proxy
         {
             try
             {
-                _lastActivity = DateTime.Now;
                 int ret = _remoteSocket.EndSend(ar);
                 if (ret > 0)
                 {
@@ -177,7 +161,6 @@ namespace Ap.Proxy
 
         public Task RelayFromAsync()
         {
-            _lastActivity = DateTime.Now;
             _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, null);
             return _tcsRelayFrom.Task;
         }
@@ -186,7 +169,6 @@ namespace Ap.Proxy
         {
             try
             {
-                _lastActivity = DateTime.Now;
                 int ret = _remoteSocket.EndReceive(ar);
                 if (ret <= 0)
                 {
@@ -206,7 +188,6 @@ namespace Ap.Proxy
         {
             try
             {
-                _lastActivity = DateTime.Now;
                 int ret = _socket.EndSend(ar);
                 if (ret > 0)
                 {

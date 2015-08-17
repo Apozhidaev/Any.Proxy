@@ -11,12 +11,22 @@
   </https>-->
   <!--<httpAgent>
     <module name="test" host="" port="50001">
-      <httpBridge url="http://hashabc.com/" useProxy="false" proxy="inet-proxy-b.sputnik.loadb.ubs.net:8085" useDefaultCredentials="true" userName="" password="" />
+      <httpBridge url="http://hashabc.com/"
+      useProxy="false"
+      proxy="inet-proxy-b.sputnik.loadb.ubs.net:8085"
+      useDefaultCredentials="true"
+      userName=""
+      password="" />
     </module>
   </httpAgent>-->
   <httpsAgent>
     <module name="test" host="" port="50001">
-      <httpBridge url="http://hashabc.com:50003/" useProxy="false" proxy="inet-proxy-b.sputnik.loadb.ubs.net:8085" useDefaultCredentials="true" userName="" password="" />
+      <httpBridge url="http://hashabc.com:50003/"
+                  useProxy="false"
+                  proxy="inet-proxy-b.sputnik.loadb.ubs.net:8085"
+                  useDefaultCredentials="true"
+                  userName=""
+                  password="" />
     </module>
   </httpsAgent>
   <!--<httpBridgeService>

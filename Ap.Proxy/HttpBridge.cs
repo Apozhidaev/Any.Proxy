@@ -24,9 +24,6 @@ namespace Ap.Proxy
 
         private readonly string _connectionId;
 
-        private DateTime _lastActivity = DateTime.Now.AddYears(1);
-        private readonly Timer _timer;
-
         public HttpBridge(string connectionId, HttpBridgeConfig config, Socket socket, string host, int port, bool isKeepAlive = false)
         {
             _connectionId = connectionId;
@@ -56,9 +53,6 @@ namespace Ap.Proxy
             }
 
             _httpClient = new HttpClient(handler);
-
-            _timer = new Timer(_ => DoWork());
-            _timer.Change(1000, 100);
         }
 
         public Task HandshakeAsync()
@@ -90,19 +84,10 @@ namespace Ap.Proxy
         {
             _tcsRelayFrom.TrySetResult(0);
             _tcsRelayTo.TrySetResult(0);
-            _timer.Dispose();
             if (_httpClient != null)
             {
                 _httpClient.Dispose();
                 _httpClient = null;
-            }
-        }
-
-        private void DoWork()
-        {
-            if (DateTime.Now > _lastActivity && DateTime.Now - _lastActivity > TimeSpan.FromSeconds(3))
-            {
-                Dispose();
             }
         }
 
@@ -130,7 +115,6 @@ namespace Ap.Proxy
 
         public Task RelayToAsync()
         {
-            _lastActivity = DateTime.Now;
             _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
             return _tcsRelayTo.Task;
         }
@@ -139,7 +123,6 @@ namespace Ap.Proxy
         {
             try
             {
-                _lastActivity = DateTime.Now;
                 int ret = _socket.EndReceive(ar);
                 if (ret <= 0)
                 {
@@ -150,7 +133,6 @@ namespace Ap.Proxy
                 {
                     try
                     {
-                        _lastActivity = DateTime.Now;
                         HttpResponseMessage response = _.Result;
                         if (response.StatusCode == HttpStatusCode.OK)
                         {
@@ -185,12 +167,10 @@ namespace Ap.Proxy
 
         private void RemoteReceive()
         {
-            _lastActivity = DateTime.Now;
             _httpClient.PostAsync(_receiveUri, new StringContent(_connectionId)).ContinueWith(_ =>
             {
                 try
                 {
-                    _lastActivity = DateTime.Now;
                     HttpResponseMessage response = _.Result;
                     if (response.StatusCode == HttpStatusCode.OK)
                     {
