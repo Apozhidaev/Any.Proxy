@@ -1,5 +1,4 @@
-﻿using System;
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using Ap.Proxy.Https;
 using Ap.Proxy.HttpsAgent.Configuration;
 
