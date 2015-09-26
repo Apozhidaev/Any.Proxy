@@ -1,7 +1,8 @@
 ﻿using System;
-using System.Net;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net.Sockets;
-using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 using Ap.Logs;
 using Ap.Proxy.Loggers;
@@ -10,223 +11,107 @@ namespace Ap.Proxy
 {
     public class TcpBridge : IBridge
     {
-        private readonly byte[] _buffer;
-        private readonly byte[] _remoteBuffer;
-        private readonly IPEndPoint _remotePoint;
-        private readonly Socket _remoteSocket;
-        private readonly string _connectionId;
-        private readonly Socket _socket;
-        private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
-        private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
+        private readonly TcpClient _server;
+        private readonly TcpClient _client;
+        private NetworkStream _serverNetwork;
+        private readonly NetworkStream _clientNetwork;
 
-        private DateTime _lastActivity = DateTime.Now.AddYears(1);
-        private readonly Timer _timer;
-        private bool _isDisposed = false;
 
-        public TcpBridge(string connectionId, Socket socket, IPEndPoint remotePoint, bool isKeepAlive = false)
+        public TcpBridge(TcpClient client)
         {
-            _connectionId = connectionId;
-            _socket = socket;
-            _remotePoint = remotePoint;
-            _remoteSocket = new Socket(remotePoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            if (isKeepAlive)
-            {
-                _remoteSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, 1);
-            }
-            _buffer = new byte[socket.ReceiveBufferSize];
-            _remoteBuffer = new byte[_remoteSocket.ReceiveBufferSize];
-            _timer = new Timer(_ => DoWork());
-            _timer.Change(1000, 100);
+            _client = client;
+            _clientNetwork = _client.GetStream();
+            _server = new TcpClient();
         }
 
-        public TcpBridge(string connectionId, Socket socket, string host, int port, bool isKeepAlive = false)
-            : this(connectionId, socket, new IPEndPoint(Dns.GetHostAddresses(host)[0], port), isKeepAlive)
-        {
-        }
+        public bool Connected => _client.Connected && _server.Connected;
 
         public void Dispose()
         {
-            _tcsRelayFrom.TrySetResult(0);
-            _tcsRelayTo.TrySetResult(0);
-            _timer.Dispose();
-            lock (_remoteSocket)
-            {
-                if (!_isDisposed)
-                {
-                    try
-                    {
-                        _remoteSocket.Shutdown(SocketShutdown.Both);
-                        _remoteSocket.Close();
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Out.Error(e, _connectionId, "Dispose");
-                    }
-                    _remoteSocket.Dispose();
-                    _isDisposed = true;
-                }
-            }
-            
-            
-
+            _serverNetwork?.Close();
+            _server?.Close();
+            _clientNetwork.Close();
+            _client.Close();
         }
 
-        private void DoWork()
-        {
-            if (DateTime.Now > _lastActivity && DateTime.Now - _lastActivity > TimeSpan.FromSeconds(1))
-            {
-                Dispose();
-            }
-        }
-
-        #region Handshake
-
-        public Task HandshakeAsync()
+        public Task HandshakeAsync(string connectionId, string host, int port)
         {
             var tcsHandshake = new TaskCompletionSource<int>();
-            _remoteSocket.BeginConnect(_remotePoint, ar =>
+            _server.ConnectAsync(host, port).ContinueWith(__ =>
             {
-                try
+                if (__.Exception != null)
                 {
-                    _remoteSocket.EndConnect(ar);
+                    Log.Out.Error(__.Exception, connectionId, "HandshakeAsync");
+                    tcsHandshake.SetException(__.Exception);
+                }
+                else
+                {
+                    _serverNetwork = _server.GetStream();
                     tcsHandshake.SetResult(0);
                 }
-                catch (Exception e)
-                {
-                    Log.Out.Error(e, _connectionId, "HandshakeAsync");
-                    tcsHandshake.SetException(e);
-                }
-            }, null);
+            });
             return tcsHandshake.Task;
         }
 
-        #endregion
+        public async Task<byte[]> ReadToAsync(Func<string, bool> end)
+        {
+            var res = new List<byte>();
+            var query = String.Empty;
+            var buffer = new byte[1024*1024];
+            do
+            {
+                var count = await _clientNetwork.ReadAsync(buffer, 0, buffer.Length);
+                res.AddRange(buffer.Take(count));
+                query += Encoding.ASCII.GetString(buffer, 0, count);
+            } while (Connected && !end(query));
+            return res.ToArray();
+        }
 
-        #region Relay
+        public async Task RelayFromAsync(Func<string, bool> end)
+        {
+            var query = String.Empty;
+            var buffer = new byte[1024*1024];
+            do
+            {
+                var count = await _serverNetwork.ReadAsync(buffer, 0, buffer.Length);
+                await _clientNetwork.WriteAsync(buffer, 0, count);
+                query += Encoding.ASCII.GetString(buffer, 0, count);
+            } while (Connected && !end(query));
+        }
+
+        public async Task RelayFromAsync()
+        {
+            var buffer = new byte[1024 * 1024];
+            while (Connected)
+            {
+                var count = await _serverNetwork.ReadAsync(buffer, 0, buffer.Length);
+                await _clientNetwork.WriteAsync(buffer, 0, count);
+            }
+        }
 
         public Task RelayAsync()
         {
-            return Task.Run(() =>
-            {
-                try
-                {
-                    Task.WaitAll(RelayToAsync(), RelayFromAsync());
-                }
-                catch (Exception e)
-                {
-                    Log.Out.Error(e, _connectionId, "RelayAsync");
-                }
-                
-            });
+            return Task.WhenAll(RelayFromAsync(), RelayToAsync());
         }
 
-        #endregion
-
-        #region RelayTo
-
-        public Task RelayToAsync()
+        public async Task RelayToAsync()
         {
-            _lastActivity = DateTime.Now;
-            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
-            return _tcsRelayTo.Task;
-        }
-
-        private void OnClientReceive(IAsyncResult ar)
-        {
-            try
+            var buffer = new byte[1024 * 1024];
+            while (Connected)
             {
-                _lastActivity = DateTime.Now;
-                int ret = _socket.EndReceive(ar);
-                if (ret <= 0)
-                {
-                    _tcsRelayTo.TrySetResult(0);
-                    return;
-                }
-                _remoteSocket.BeginSend(_buffer, 0, ret, SocketFlags.None, OnRemoteSent, null);
-            }
-            catch (Exception e)
-            {
-                Log.Out.Error(e, _connectionId, "OnClientReceive");
-                _tcsRelayTo.TrySetException(e);
+                var count = await _clientNetwork.ReadAsync(buffer, 0, buffer.Length);
+                await _serverNetwork.WriteAsync(buffer, 0, count);
             }
         }
 
-        private void OnRemoteSent(IAsyncResult ar)
+        public Task WriteFromAsync(byte[] bytes)
         {
-            try
-            {
-                _lastActivity = DateTime.Now;
-                int ret = _remoteSocket.EndSend(ar);
-                if (ret > 0)
-                {
-                    _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
-                    return;
-                }
-                _tcsRelayTo.TrySetResult(0);
-            }
-            catch (Exception e)
-            {
-                Log.Out.Error(e, _connectionId, "OnRemoteSent");
-                _tcsRelayTo.TrySetException(e);
-            }
+            return _serverNetwork.WriteAsync(bytes, 0, bytes.Length);
         }
 
-        #endregion
-
-        #region RelayFrom
-
-        public Task RelayFromAsync()
+        public Task WriteToAsync(byte[] bytes)
         {
-            _lastActivity = DateTime.Now;
-            _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, null);
-            return _tcsRelayFrom.Task;
-        }
-
-        private void OnRemoteReceive(IAsyncResult ar)
-        {
-            try
-            {
-                _lastActivity = DateTime.Now;
-                int ret = _remoteSocket.EndReceive(ar);
-                if (ret <= 0)
-                {
-                    _tcsRelayFrom.TrySetResult(0);
-                    return;
-                }
-                _socket.BeginSend(_remoteBuffer, 0, ret, SocketFlags.None, OnClientSent, null);
-            }
-            catch (Exception e)
-            {
-                Log.Out.Error(e, _connectionId, "OnRemoteReceive");
-                _tcsRelayFrom.TrySetException(e);
-            }
-        }
-
-        private void OnClientSent(IAsyncResult ar)
-        {
-            try
-            {
-                _lastActivity = DateTime.Now;
-                int ret = _socket.EndSend(ar);
-                if (ret > 0)
-                {
-                    _remoteSocket.BeginReceive(_remoteBuffer, 0, _remoteBuffer.Length, SocketFlags.None, OnRemoteReceive, null);
-                    return;
-                }
-                _tcsRelayFrom.TrySetResult(0);
-            }
-            catch (Exception e)
-            {
-                Log.Out.Error(e, _connectionId, "OnClientSent");
-                _tcsRelayFrom.TrySetException(e);
-            }
-        }
-
-        #endregion
-
-        public Task WriteAsync(byte[] bytes)
-        {
-            return _remoteSocket.WriteAsync(bytes);
+            return _clientNetwork.WriteAsync(bytes, 0, bytes.Length);
         }
     }
 }

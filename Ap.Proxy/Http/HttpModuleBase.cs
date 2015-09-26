@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Ap.Proxy.Http
 {
@@ -10,45 +10,45 @@ namespace Ap.Proxy.Http
         private readonly IPAddress _address;
         private readonly LinkedList<Connection> _connections = new LinkedList<Connection>();
         private readonly int _port;
-        public bool _isDisposed;
-        protected Socket _listenSocket;
+        protected TcpListener _tcpListener;
 
         protected HttpModuleBase(string host, int port)
         {
-            _isDisposed = false;
             _port = port;
             _address = Proxy.GetIP(host);
         }
 
-        public void Start()
+        public async void Start()
         {
             try
             {
-                _listenSocket = new Socket(_address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                _listenSocket.Bind(new IPEndPoint(_address, _port));
-                _listenSocket.Listen(500);
-                _listenSocket.BeginAccept(OnAccept, _listenSocket);
+                _tcpListener = new TcpListener(_address, _port);
+                _tcpListener.Start();
+                while (true)
+                {
+                    await Accept(await _tcpListener.AcceptTcpClientAsync());
+                }
             }
-            catch
+            finally 
             {
-                _listenSocket = null;
-                throw new SocketException();
+                _tcpListener?.Stop();
             }
         }
 
         protected void Restart()
         {
-            if (_listenSocket == null)
-                return;
-            _listenSocket.Close();
+            _tcpListener?.Stop();
             Start();
         }
 
         protected void AddConnection(Connection connection)
         {
-            if (!_connections.Contains(connection))
+            lock (_connections)
             {
-                _connections.AddLast(connection);
+                if (!_connections.Contains(connection))
+                {
+                    _connections.AddLast(connection);
+                }
             }
         }
 
@@ -65,24 +65,19 @@ namespace Ap.Proxy.Http
 
         public void Dispose()
         {
-            if (_isDisposed)
-                return;
             while (_connections.Count > 0)
             {
                 _connections.First.Value.Dispose();
             }
-            try
-            {
-                _listenSocket.Shutdown(SocketShutdown.Both);
-            }
-            catch
-            {
-            }
-            if (_listenSocket != null)
-                _listenSocket.Close();
-            _isDisposed = true;
+            _tcpListener?.Stop();
         }
 
-        protected abstract void OnAccept(IAsyncResult ar);
+        protected async Task Accept(TcpClient client)
+        {
+            await Task.Yield();
+            OnAccept(client);
+        }
+
+        protected abstract void OnAccept(TcpClient client);
     }
 }

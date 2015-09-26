@@ -61,13 +61,13 @@ namespace Ap.Proxy.HttpBridgeService
                 switch (context.Request.QueryString["a"])
                 {
                     case "hc":
-                        HttpConnect(context);
+                        await HttpConnect(context);
                         break;
                     case "hr":
-                        HttpReceive(context);
+                        await HttpReceive(context);
                         break;
                     case "hs":
-                        HttpSend(context);
+                        await HttpSend(context);
                         break;
                     default:
                         CreateResponse(context.Response, HttpStatusCode.BadRequest, String.Empty);
@@ -80,19 +80,19 @@ namespace Ap.Proxy.HttpBridgeService
             }
         }
 
-        private void HttpConnect(HttpListenerContext context)
+        private async Task HttpConnect(HttpListenerContext context)
         {
             string httpRequest = ReadAsString(context.Request);
             string[] sp = httpRequest.Split(':');
             var connectionId = sp[0];
             Log.Out.BeginInfo(connectionId, context.Request.Headers.ToString(), "HttpConnect host: {0}, port: {1}", sp[1], sp[2]);
             RemoteConnection connection = RemoteConnection.Open(connectionId, sp[1], Int32.Parse(sp[2]));
-            connection.HandshakeAsync().Wait();
+            await connection.HandshakeAsync();
             CreateResponse(context.Response, HttpStatusCode.OK, connectionId);
             Log.Out.EndInfo(connectionId, "", "HttpConnect host: {0}, port: {1}", sp[1], sp[2]);
         }
 
-        private void HttpReceive(HttpListenerContext context)
+        private async Task HttpReceive(HttpListenerContext context)
         {
             string connectionId = ReadAsString(context.Request);
             Log.Out.BeginInfo(connectionId, context.Request.Headers.ToString(), "HttpReceive");
@@ -103,11 +103,11 @@ namespace Ap.Proxy.HttpBridgeService
                 Log.Out.EndInfo(connectionId, "", "HttpReceive => connection == null");
                 return;
             }
-            int length = connection.RelayFromAsync().Result;
-            if (length > 0)
+            var buffer = await connection.ReadAsync();
+            if (buffer.Length > 0)
             {
-                CreateResponse(context.Response, HttpStatusCode.OK, Convert.ToBase64String(connection.Buffer, 0, length), connectionId);
-                Log.Out.EndInfo(connectionId, "", "HttpReceive length == {0}", length);
+                CreateResponse(context.Response, HttpStatusCode.OK, Convert.ToBase64String(buffer, 0, buffer.Length), connectionId);
+                Log.Out.EndInfo(connectionId, "", "HttpReceive length == {0}", buffer.Length);
                 return;
             }
             connection.Dispose();
@@ -115,7 +115,7 @@ namespace Ap.Proxy.HttpBridgeService
             Log.Out.EndInfo(connectionId, "", "HttpReceive => length == 0");
         }
 
-        private void HttpSend(HttpListenerContext context)
+        private async Task HttpSend(HttpListenerContext context)
         {
             string httpRequest = ReadAsString(context.Request);
             string[] sp = httpRequest.Split(':');
@@ -129,16 +129,9 @@ namespace Ap.Proxy.HttpBridgeService
                 Log.Out.EndInfo(connectionId, "", "HttpSend => connection == null");
                 return;
             }
-            int length = connection.RelayToAsync(httpResponse).Result;
-            if (length > 0)
-            {
-                CreateResponse(context.Response, HttpStatusCode.OK, connectionId);
-                Log.Out.EndInfo(connectionId, "", "HttpSend length == {0}", length);
-                return;
-            }
-            connection.Dispose();
-            CreateResponse(context.Response, HttpStatusCode.BadRequest, connectionId);
-            Log.Out.EndInfo(connectionId, "", "HttpSend => length == 0");
+            await connection.WriteAsync(httpResponse);
+            CreateResponse(context.Response, HttpStatusCode.OK, connectionId);
+            Log.Out.EndInfo(connectionId, "", "HttpSend length == {0}", httpResponse.Length);
         }
 
         private string ReadAsString(HttpListenerRequest context)

@@ -1,4 +1,3 @@
-using System;
 using System.Net.Sockets;
 using Ap.Proxy.Https.Configuration;
 
@@ -11,29 +10,11 @@ namespace Ap.Proxy.Https
         {
         }
 
-        protected override void OnAccept(IAsyncResult ar)
+        protected override void OnAccept(TcpClient client)
         {
-            try
-            {
-                Socket socket = _listenSocket.EndAccept(ar);
-                if (socket != null)
-                {
-                    var connection = new HttpsConnection(socket, (connectionId, host, port, isKeepAlive) => new TcpBridge(connectionId, socket, host, port, isKeepAlive), RemoveConnection);
-                    AddConnection(connection);
-                    connection.StartHandshake();
-                }
-            }
-            catch
-            {
-            }
-            try
-            {
-                _listenSocket.BeginAccept(OnAccept, _listenSocket);
-            }
-            catch
-            {
-                Dispose();
-            }
+            var connection = new HttpsConnection(new TcpBridge(client), RemoveConnection);
+            AddConnection(connection);
+            connection.Open();
         }
     }
 }

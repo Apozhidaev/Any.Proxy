@@ -53,7 +53,7 @@
     <Compile Include="HttpBridgeService\HttpBridgeServiceModule.cs" />
     <Compile Include="HttpBridgeService\RemoteConnection.cs" />
     <Compile Include="HttpsAgent\Configuration\HttpsAgentConfig.cs" />
-    <Compile Include="HttpsAgent\HttpAgentModule.cs" />
+    <Compile Include="HttpsAgent\HttpsAgentModule.cs" />
     <Compile Include="Https\Configuration\HttpsConfig.cs" />
     <Compile Include="Https\HttpsConnection.cs" />
     <Compile Include="Https\HttpsModule.cs" />

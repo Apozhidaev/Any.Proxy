@@ -9,13 +9,14 @@ namespace Ap.Proxy.PortMap
     public class PortMapModule : IProxyModule
     {
         private readonly TcpListener _listener;
-        private readonly IPEndPoint _toPoint;
+        private readonly string _host;
+        private readonly int _port;
 
         public PortMapModule(PortMapConfig config)
         {
-            var fromPoint=new IPEndPoint(Proxy.GetIP(config.FromHost), config.FromPort);
-            _toPoint = new IPEndPoint(Proxy.GetIP(config.ToHost), config.ToPort);
-            _listener = new TcpListener(fromPoint);
+            _host = config.ToHost;
+            _port = config.ToPort;
+            _listener = new TcpListener(new IPEndPoint(Proxy.GetIP(config.FromHost), config.FromPort));
         }
 
         public async void Start()
@@ -24,7 +25,7 @@ namespace Ap.Proxy.PortMap
 
             while (true)
             {
-                await Accept(await _listener.AcceptSocketAsync());
+                await Accept(await _listener.AcceptTcpClientAsync());
             }
         }
 
@@ -33,13 +34,13 @@ namespace Ap.Proxy.PortMap
             _listener.Stop();
         }
 
-        private async Task Accept(Socket socket)
+        private async Task Accept(TcpClient client)
         {
             await Task.Yield();
-            using (socket)
-            using (var bridge = new TcpBridge(String.Format("pm_{0}", Guid.NewGuid()), socket, _toPoint))
+            using (client)
+            using (var bridge = new TcpBridge(client))
             {
-                await bridge.HandshakeAsync();
+                await bridge.HandshakeAsync(null, _host, _port);
                 await bridge.RelayAsync();
             }
         }

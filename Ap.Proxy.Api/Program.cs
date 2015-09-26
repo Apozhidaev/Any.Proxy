@@ -16,9 +16,9 @@ namespace Ap.Proxy.Api
                 });
                 x.RunAsLocalSystem();
 
-                x.SetDescription("Any Proxy");
-                x.SetDisplayName("Any Proxy");
-                x.SetServiceName("AnyProxy");
+                x.SetDescription("Ap.Proxy");
+                x.SetDisplayName("Ap.Proxy");
+                x.SetServiceName("Ap.Proxy");
             });
         }
     }

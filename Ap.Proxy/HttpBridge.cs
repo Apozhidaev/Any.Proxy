@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Sockets;
-using System.Threading;
+using System.Text;
 using System.Threading.Tasks;
 using Ap.Proxy.Configuration;
 
@@ -10,33 +12,21 @@ namespace Ap.Proxy
 {
     public class HttpBridge : IBridge
     {
-        private readonly byte[] _buffer;
-
+        private string _connectionId;
+        private readonly TcpClient _client;
+        private readonly NetworkStream _clientNetwork;
         private readonly Uri _connectUri;
-        private readonly string _host;
-        private HttpClient _httpClient;
-        private readonly int _port;
         private readonly Uri _receiveUri;
         private readonly Uri _sendUri;
-        private readonly Socket _socket;
-        private readonly TaskCompletionSource<int> _tcsRelayFrom = new TaskCompletionSource<int>();
-        private readonly TaskCompletionSource<int> _tcsRelayTo = new TaskCompletionSource<int>();
+        private readonly HttpClient _httpClient;
 
-        private readonly string _connectionId;
-
-        private DateTime _lastActivity = DateTime.Now.AddYears(1);
-        private readonly Timer _timer;
-
-        public HttpBridge(string connectionId, HttpBridgeConfig config, Socket socket, string host, int port, bool isKeepAlive = false)
+        public HttpBridge(HttpBridgeConfig config, TcpClient client)
         {
-            _connectionId = connectionId;
-            _socket = socket;
-            _host = host;
-            _port = port;
-            _buffer = new byte[socket.ReceiveBufferSize];
-            _connectUri = new Uri(String.Format("{0}?a=hc", config.Url));
-            _receiveUri = new Uri(String.Format("{0}?a=hr", config.Url));
-            _sendUri = new Uri(String.Format("{0}?a=hs", config.Url));
+            _client = client;
+            _clientNetwork = _client.GetStream();
+            _connectUri = new Uri($"{config.Url}?a=hc");
+            _receiveUri = new Uri($"{config.Url}?a=hr");
+            _sendUri = new Uri($"{config.Url}?a=hs");
 
             var handler = new HttpClientHandler { UseProxy = config.UseProxy };
             if(config.UseProxy)
@@ -56,15 +46,13 @@ namespace Ap.Proxy
             }
 
             _httpClient = new HttpClient(handler);
-
-            _timer = new Timer(_ => DoWork());
-            _timer.Change(1000, 100);
         }
 
-        public Task HandshakeAsync()
+        public Task HandshakeAsync(string connectionId, string host, int port)
         {
+            _connectionId = connectionId;
             var tcsHandshake = new TaskCompletionSource<int>();
-            _httpClient.PostAsync(_connectUri, new StringContent(String.Format("{0}:{1}:{2}", _connectionId, _host, _port)))
+            _httpClient.PostAsync(_connectUri, new StringContent($"{connectionId}:{host}:{port}"))
                 .ContinueWith(_ =>
                 {
                     if (_.Exception != null)
@@ -88,150 +76,65 @@ namespace Ap.Proxy
 
         public void Dispose()
         {
-            _tcsRelayFrom.TrySetResult(0);
-            _tcsRelayTo.TrySetResult(0);
-            _timer.Dispose();
-            if (_httpClient != null)
-            {
-                _httpClient.Dispose();
-                _httpClient = null;
-            }
+            _httpClient?.Dispose();
+            _clientNetwork.Close();
+            _client.Close();
         }
 
-        private void DoWork()
+        public bool Connected => _client.Connected;
+
+        public async Task<byte[]> ReadToAsync(Func<string, bool> end)
         {
-            if (DateTime.Now > _lastActivity && DateTime.Now - _lastActivity > TimeSpan.FromSeconds(3))
+            var res = new List<byte>();
+            var query = String.Empty;
+            var buffer = new byte[1024 * 1024];
+            do
             {
-                Dispose();
-            }
+                var count = await _clientNetwork.ReadAsync(buffer, 0, buffer.Length);
+                res.AddRange(buffer.Take(count));
+                query += Encoding.ASCII.GetString(buffer, 0, count);
+            } while (Connected && !end(query));
+            return res.ToArray();
         }
-
-        #region Relay
 
         public Task RelayAsync()
         {
-            return Task.Run(() =>
-            {
-                try
-                {
-                    Task.WaitAll(RelayToAsync(), RelayFromAsync());
-                }
-                catch (Exception)
-                {
-
-                }
-
-            });
+            return Task.WhenAll(RelayFromAsync(), RelayToAsync());
         }
 
-        #endregion
-
-        #region RelayTo
-
-        public Task RelayToAsync()
+        public async Task RelayToAsync()
         {
-            _lastActivity = DateTime.Now;
-            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
-            return _tcsRelayTo.Task;
-        }
-
-        private void OnClientReceive(IAsyncResult ar)
-        {
-            try
+            var buffer = new byte[1024 * 1024];
+            while (Connected)
             {
-                _lastActivity = DateTime.Now;
-                int ret = _socket.EndReceive(ar);
-                if (ret <= 0)
-                {
-                    _tcsRelayTo.TrySetResult(0);
-                    return;
-                }
-                _httpClient.PostAsync(_sendUri, new StringContent(FormMessage(ret))).ContinueWith(_ =>
-                {
-                    try
-                    {
-                        _lastActivity = DateTime.Now;
-                        HttpResponseMessage response = _.Result;
-                        if (response.StatusCode == HttpStatusCode.OK)
-                        {
-                            _socket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnClientReceive, null);
-                        }
-                        else
-                        {
-                            _tcsRelayTo.TrySetResult(0);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _tcsRelayTo.TrySetException(ex);
-                    }
-                });
-            }
-            catch (Exception e)
-            {
-                _tcsRelayTo.TrySetException(e);
+                var count = await _clientNetwork.ReadAsync(buffer, 0, buffer.Length);
+                var res = new byte[count];
+                Array.Copy(buffer, res, res.Length);
+                await RemoteSend(res);
             }
         }
 
-        #endregion
-
-        #region RelayFrom
-
-        public Task RelayFromAsync()
+        public async Task RelayFromAsync()
         {
-            RemoteReceive();
-            return _tcsRelayFrom.Task;
-        }
-
-        private void RemoteReceive()
-        {
-            _lastActivity = DateTime.Now;
-            _httpClient.PostAsync(_receiveUri, new StringContent(_connectionId)).ContinueWith(_ =>
+            while (Connected)
             {
-                try
-                {
-                    _lastActivity = DateTime.Now;
-                    HttpResponseMessage response = _.Result;
-                    if (response.StatusCode == HttpStatusCode.OK)
-                    {
-                        string strResponse = response.Content.ReadAsStringAsync().Result;
-                        byte[] remoteBuffer = Convert.FromBase64String(strResponse);
-                        _socket.BeginSend(remoteBuffer, 0, remoteBuffer.Length, SocketFlags.None, OnClientSent, null);
-                    }
-                    else
-                    {
-                        _tcsRelayFrom.TrySetResult(0);
-                    }
-                }
-                catch (Exception e)
-                {
-                    _tcsRelayFrom.TrySetException(e);
-                }
-            });
-        }
-
-        private void OnClientSent(IAsyncResult ar)
-        {
-            try
-            {
-                int ret = _socket.EndSend(ar);
-                if (ret > 0)
-                {
-                    RemoteReceive();
-                    return;
-                }
+                var buffer = await RemoteReceive();
+                await _clientNetwork.WriteAsync(buffer, 0, buffer.Length);
             }
-            catch (Exception e)
-            {
-                _tcsRelayFrom.TrySetException(e);
-                return;
-            }
-            _tcsRelayFrom.TrySetResult(0);
         }
 
-        #endregion
+        public async Task RelayFromAsync(Func<string, bool> end)
+        {
+            var query = String.Empty;
+            do
+            {
+                var buffer = await RemoteReceive();
+                await _clientNetwork.WriteAsync(buffer, 0, buffer.Length);
+                query += Encoding.ASCII.GetString(buffer, 0, buffer.Length);
+            } while (Connected && !end(query));
+        }
 
-        public Task WriteAsync(byte[] bytes)
+        public Task WriteFromAsync(byte[] bytes)
         {
             var tcsWrite = new TaskCompletionSource<int>();
             _httpClient.PostAsync(_sendUri, new StringContent(FormMessage(bytes))).ContinueWith(_ =>
@@ -256,14 +159,31 @@ namespace Ap.Proxy
             return tcsWrite.Task;
         }
 
-        private string FormMessage(int length)
+        public Task WriteToAsync(byte[] bytes)
         {
-            return String.Format("{0}:{1}", _connectionId, Convert.ToBase64String(_buffer, 0, length));
+            return _clientNetwork.WriteAsync(bytes, 0, bytes.Length);
         }
 
         private string FormMessage(byte[] bytes)
         {
-            return String.Format("{0}:{1}", _connectionId, Convert.ToBase64String(bytes));
+            return $"{_connectionId}:{Convert.ToBase64String(bytes)}";
+        }
+
+        private async Task<byte[]> RemoteReceive()
+        {
+            HttpResponseMessage response = await _httpClient.PostAsync(_receiveUri, new StringContent(_connectionId));
+            if (response.StatusCode == HttpStatusCode.OK)
+            {
+                string strResponse = await response.Content.ReadAsStringAsync();
+                return Convert.FromBase64String(strResponse);
+            }
+            return new byte[0];
+        }
+
+        private async Task<bool> RemoteSend(byte[] bytes)
+        {
+            HttpResponseMessage response = await _httpClient.PostAsync(_sendUri, new StringContent(FormMessage(bytes)));
+            return response.StatusCode == HttpStatusCode.OK;
         }
     }
 }

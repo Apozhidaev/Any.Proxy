@@ -26,42 +26,42 @@ namespace Ap.Proxy
             {
                 foreach (var config in configuration.PortMap)
                 {
-                    _listeners.Add(String.Format("PortMap-{0}", config.Name), new PortMapModule(config));
+                    _listeners.Add($"PortMap-{config.Name}", new PortMapModule(config));
                 }
             }
             if (configuration.Http != null)
             {
                 foreach (var config in configuration.Http)
                 {
-                    _listeners.Add(String.Format("Http-{0}", config.Name), new HttpModule(config));
+                    _listeners.Add($"Http-{config.Name}", new HttpModule(config));
                 }
             }
             if (configuration.Https != null)
             {
                 foreach (var config in configuration.Https)
                 {
-                    _listeners.Add(String.Format("Https-{0}", config.Name), new HttpsModule(config));
+                    _listeners.Add($"Https-{config.Name}", new HttpsModule(config));
                 }
             }
             if (configuration.HttpAgent != null)
             {
                 foreach (var config in configuration.HttpAgent)
                 {
-                    _listeners.Add(String.Format("HttpAgent-{0}", config.Name), new HttpAgentModule(config));
+                    _listeners.Add($"HttpAgent-{config.Name}", new HttpAgentModule(config));
                 }
             }
             if (configuration.HttpsAgent != null)
             {
                 foreach (var config in configuration.HttpsAgent)
                 {
-                    _listeners.Add(String.Format("HttpsAgent-{0}", config.Name), new HttpsAgentModule(config));
+                    _listeners.Add($"HttpsAgent-{config.Name}", new HttpsAgentModule(config));
                 }
             }
             if (configuration.HttpBridgeService != null)
             {
                 foreach (var config in configuration.HttpBridgeService)
                 {
-                    _listeners.Add(String.Format("HttpBridgeService-{0}", config.Name),
+                    _listeners.Add($"HttpBridgeService-{config.Name}",
                         new HttpBridgeServiceModule(config));
                 }
             }
@@ -69,7 +69,7 @@ namespace Ap.Proxy
             {
                 foreach (var config in configuration.Redirect)
                 {
-                    _listeners.Add(String.Format("Redirect-{0}", config.Name), new RedirectModule(config));
+                    _listeners.Add($"Redirect-{config.Name}", new RedirectModule(config));
                 }
             }
 

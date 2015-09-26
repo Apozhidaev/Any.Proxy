@@ -1,7 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 
 namespace Ap.Proxy.Https
 {
@@ -10,79 +10,74 @@ namespace Ap.Proxy.Https
         private readonly IPAddress _address;
         private readonly LinkedList<HttpsConnection> _connections = new LinkedList<HttpsConnection>();
         private readonly int _port;
-        public bool _isDisposed;
-        protected Socket _listenSocket;
+        protected TcpListener _tcpListener;
 
         protected HttpsModuleBase(string host, int port)
         {
-            _isDisposed = false;
             _port = port;
             _address = Proxy.GetIP(host);
         }
 
-        public void Start()
+        public async void Start()
         {
             try
             {
-                _listenSocket = new Socket(_address.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                _listenSocket.Bind(new IPEndPoint(_address, _port));
-                _listenSocket.Listen(500);
-                _listenSocket.BeginAccept(OnAccept, _listenSocket);
+                _tcpListener = new TcpListener(_address, _port);
+                _tcpListener.Start();
+                while (true)
+                {
+                    await Accept(await _tcpListener.AcceptTcpClientAsync());
+                }
             }
-            catch
+            finally
             {
-                _listenSocket = null;
-                throw new SocketException();
+                _tcpListener?.Stop();
             }
         }
 
         protected void Restart()
         {
-            if (_listenSocket == null)
-                return;
-            _listenSocket.Close();
+            _tcpListener?.Stop();
             Start();
         }
 
-        protected void AddConnection(HttpsConnection httpsConnection)
-        {
-            if (!_connections.Contains(httpsConnection))
-            {
-                _connections.AddLast(httpsConnection);
-            }
-        }
-
-        protected void RemoveConnection(HttpsConnection httpsConnection)
+        protected void AddConnection(HttpsConnection connection)
         {
             lock (_connections)
             {
-                if (_connections.Contains(httpsConnection))
+                if (!_connections.Contains(connection))
                 {
-                    _connections.Remove(httpsConnection);
+                    _connections.AddLast(connection);
+                }
+            }
+        }
+
+        protected void RemoveConnection(HttpsConnection connection)
+        {
+            lock (_connections)
+            {
+                if (_connections.Contains(connection))
+                {
+                    _connections.Remove(connection);
                 }
             }
         }
 
         public void Dispose()
         {
-            if (_isDisposed)
-                return;
             while (_connections.Count > 0)
             {
                 _connections.First.Value.Dispose();
             }
-            try
-            {
-                _listenSocket.Shutdown(SocketShutdown.Both);
-            }
-            catch
-            {
-            }
-            if (_listenSocket != null)
-                _listenSocket.Close();
-            _isDisposed = true;
+            _tcpListener?.Stop();
         }
 
-        protected abstract void OnAccept(IAsyncResult ar);
+        protected async Task Accept(TcpClient client)
+        {
+            await Task.Yield();
+            OnAccept(client);
+        }
+
+        protected abstract void OnAccept(TcpClient client);
     }
 }

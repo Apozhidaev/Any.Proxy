@@ -7,11 +7,8 @@ namespace Ap.Proxy.Api
 {
     public class RemoteControl
     {
-        private static readonly Ap.Proxy.Proxy _proxy = new Ap.Proxy.Proxy();
-        public static Ap.Proxy.Proxy Proxy
-        {
-            get { return _proxy; }
-        }
+        private static readonly Proxy _proxy = new Proxy();
+        public static Proxy Proxy => _proxy;
 
         public static string Password { get; private set; }
 

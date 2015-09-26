@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading.Tasks;
 using Ap.Logs;
 using Ap.Proxy.Loggers;
 
@@ -9,108 +10,34 @@ namespace Ap.Proxy.Http
 {
     public class Connection : IDisposable
     {
-        private readonly byte[] _buffer = new byte[40960];
         private readonly Action<Connection> _destroyer;
-        private readonly Socket _clientSocket;
-        private Dictionary<string, string> _headerFields;
-        private string _httpQuery = "";
-        private string _httpRequestType;
-        private string _httpVersion;
-        private string _requestedPath;
-        private IBridge _bridge;
-
-        private readonly Func<string, string, int, bool, IBridge> _bridgeFactory;
+        private readonly IBridge _bridge;
         private readonly string _id;
 
-        public Connection(Socket clientSocket, Func<string, string, int, bool, IBridge> bridgeFactory, Action<Connection> destroyer)
+        public Connection(IBridge bridge, Action<Connection> destroyer)
         {
-            _httpRequestType = "";
-            _httpVersion = "";
-            _clientSocket = clientSocket;
+            _bridge = bridge;
             _destroyer = destroyer;
-            _bridgeFactory = bridgeFactory;
             _id = Guid.NewGuid().ToString();
         }
 
-        public string Id
-        {
-            get { return _id; }
-        }
+        public string Id => _id;
 
         public void Dispose()
         {
-            try
-            {
-                _clientSocket.Shutdown(SocketShutdown.Both);
-            }
-            catch (Exception e)
-            {
-                Log.Out.Error(e, _id, "_clientSocket.Shutdown(SocketShutdown.Both)");
-            }
-
-            _clientSocket.Close();
-            if (_bridge != null)
-            {
-                _bridge.Dispose();
-            }
+            _bridge?.Dispose();
             _destroyer(this);
         }
 
-        public void StartHandshake()
+        public void Open()
         {
-            try
+            _bridge.ReadToAsync(IsValidRequest).ContinueWith(__ =>
             {
-                _clientSocket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnReceiveQuery, _clientSocket);
-            }
-            catch (Exception e)
-            {
-                Log.Out.Error(e, _id, "StartHandshake");
-                Dispose();
-            }
+                ProcessRequest(__.Result);
+            });
         }
 
-        private void OnReceiveQuery(IAsyncResult ar)
-        {
-            int Ret;
-            try
-            {
-                Ret = _clientSocket.EndReceive(ar);
-            }
-            catch (Exception e)
-            {
-                Log.Out.Error(e, _id, "OnReceiveQuery");
-                Ret = -1;
-            }
-            if (Ret <= 0)
-            {
-                //Connection is dead :(
-                Dispose();
-                return;
-            }
-            _httpQuery += Encoding.UTF8.GetString(_buffer, 0, Ret);
-
-            //if received data is valid HTTP request...
-            if (IsValidQuery(_httpQuery))
-            {
-                ProcessQuery(_httpQuery);
-                //else, keep listening
-            }
-            else
-            {
-                try
-                {
-                    _clientSocket.BeginReceive(_buffer, 0, _buffer.Length, SocketFlags.None, OnReceiveQuery,
-                        _clientSocket);
-                }
-                catch (Exception e)
-                {
-                    Log.Out.Error(e, _id, "OnReceiveQuery");
-                    Dispose();
-                }
-            }
-        }
-
-        private bool IsValidQuery(string query)
+        private bool IsValidRequest(string query)
         {
             int index = query.IndexOf("\r\n\r\n", StringComparison.InvariantCulture);
             if (index == -1)
@@ -118,139 +45,87 @@ namespace Ap.Proxy.Http
                 return false;
             }
 
-            _headerFields = ParseQuery(query);
-            if (_httpRequestType.ToUpper().Equals("POST"))
+            var headerFields = ParseHeaders(query);
+            if (headerFields.ContainsKey("Content-Length"))
             {
-                try
-                {
-                    int length = int.Parse(_headerFields["Content-Length"]);
-                    return query.Length >= index + 6 + length;
-                }
-                catch (Exception e)
-                {
-                    Log.Out.Error(e, _id, "IsValidQuery");
-                    SendBadRequest();
-                    return true;
-                }
+                int length = int.Parse(headerFields["Content-Length"]);
+                return query.Length >= index + 4 + length;
             }
             return true;
         }
 
-        private void ProcessQuery(string query)
+        private bool IsValidResponse(string query)
         {
-            _headerFields = ParseQuery(query);
-            if (_headerFields == null || !_headerFields.ContainsKey("Host"))
+            int index = query.IndexOf("\r\n\r\n", StringComparison.InvariantCulture);
+            if (index == -1)
             {
-                Log.Out.Error(_id, "ProcessQuery");
+                return false;
+            }
+
+            var headerFields = ParseHeaders(query);
+            if (headerFields.ContainsKey("Content-Length"))
+            {
+                int length = int.Parse(headerFields["Content-Length"]);
+                return query.Length >= index + 4 + length;
+            }
+            if(headerFields.ContainsKey("Transfer-Encoding") && headerFields["Transfer-Encoding"] == "chunked")
+            {
+                var temp = query.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
+                return temp[temp.Length - 1] == "0";
+            }
+            return true;
+        }
+
+        private void ProcessRequest(byte[] bytes)
+        {
+            var query = Encoding.ASCII.GetString(bytes);
+            var headerFields = ParseHeaders(query);
+            if (headerFields == null || !headerFields.ContainsKey("Host"))
+            {
+                Log.Out.Error(_id, "ProcessRequest");
                 SendBadRequest();
                 return;
             }
             int port;
             string host;
-            int ret;
-            if (_httpRequestType.ToUpper().Equals("CONNECT"))
+            int ret = headerFields["Host"].IndexOf(":", StringComparison.Ordinal);
+            if (ret > 0)
             {
-                //HTTPS
-                ret = _requestedPath.IndexOf(":", StringComparison.InvariantCulture);
-                if (ret >= 0)
-                {
-                    host = _requestedPath.Substring(0, ret);
-                    port = _requestedPath.Length > ret + 1 ? int.Parse(_requestedPath.Substring(ret + 1)) : 443;
-                }
-                else
-                {
-                    host = _requestedPath;
-                    port = 443;
-                }
+                host = headerFields["Host"].Substring(0, ret);
+                port = int.Parse(headerFields["Host"].Substring(ret + 1));
             }
             else
             {
-                ret = _headerFields["Host"].IndexOf(":", StringComparison.Ordinal);
-                if (ret > 0)
-                {
-                    host = _headerFields["Host"].Substring(0, ret);
-                    port = int.Parse(_headerFields["Host"].Substring(ret + 1));
-                }
-                else
-                {
-                    host = _headerFields["Host"];
-                    port = 80;
-                }
+                host = headerFields["Host"];
+                port = 80;
             }
             Log.Out.Info(_id, query, host);
-            try
+            _bridge.HandshakeAsync(_id, host, port).ContinueWith(_ =>
             {
-
-                _bridge = _bridgeFactory(Id, host, port, _headerFields.ContainsKey("Proxy-Connection") && _headerFields["Proxy-Connection"].ToLower().Equals("keep-alive"));
-                _bridge.HandshakeAsync().ContinueWith(_ =>
+                if (_.Exception != null)
                 {
-                    if (_.Exception != null)
-                    {
-                        Log.Out.Error(_.Exception, _id, "ProcessQuery");
-                        SendBadRequest();
-                        return;
-                    }
-                    if (_httpRequestType.ToUpper().Equals("CONNECT"))
-                    {
-                        //HTTPS
-                        string rq = _httpVersion + " 200 Connection established\r\nProxy-Agent: Any Proxy Server\r\n\r\n";
-                        _clientSocket.WriteAsync(Encoding.UTF8.GetBytes(rq))
-                            .ContinueWith(__ => _bridge.RelayAsync().ContinueWith(___ => Dispose()));
-                    }
-                    else
-                    {
-                        _bridge.WriteAsync(Encoding.UTF8.GetBytes(_httpQuery))
-                            .ContinueWith(__ => _bridge.RelayFromAsync().ContinueWith(___ => Dispose()));
-                    }
-                });
-            }
-            catch
-            {
-                SendBadRequest();
-            }
+                    Log.Out.Error(_.Exception, _id, "ProcessRequest.HandshakeAsync");
+                    SendBadRequest();
+                    return;
+                }
+                _bridge.WriteFromAsync(bytes)
+                        .ContinueWith(__ => _bridge.RelayFromAsync(IsValidResponse)
+                        .ContinueWith(____ => Dispose()));
+            });
         }
 
-        private Dictionary<string, string> ParseQuery(string query)
+        private Dictionary<string, string> ParseHeaders(string query)
         {
             var retdict = new Dictionary<string, string>();
-            string[] lines = query.Replace("\r\n", "\n").Split('\n');
-            int cnt, ret;
-            //Extract requested URL
-            if (lines.Length > 0)
+            string[] lines = query.Split(new [] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries)[0].Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            for (int i = 1; i < lines.Length; i++)
             {
-                //Parse the Http Request Type
-                ret = lines[0].IndexOf(' ');
-                if (ret > 0)
-                {
-                    _httpRequestType = lines[0].Substring(0, ret);
-                    lines[0] = lines[0].Substring(ret).Trim();
-                }
-                //Parse the Http Version and the Requested Path
-                ret = lines[0].LastIndexOf(' ');
-                if (ret > 0)
-                {
-                    _httpVersion = lines[0].Substring(ret).Trim();
-                    _requestedPath = lines[0].Substring(0, ret);
-                }
-                else
-                {
-                    _requestedPath = lines[0];
-                }
-                //Remove http:// if present
-                if (_requestedPath.Length >= 7 && _requestedPath.Substring(0, 7).ToLower().Equals("http://"))
-                {
-                    ret = _requestedPath.IndexOf('/', 7);
-                    _requestedPath = ret == -1 ? "/" : _requestedPath.Substring(ret);
-                }
-            }
-            for (cnt = 1; cnt < lines.Length; cnt++)
-            {
-                ret = lines[cnt].IndexOf(":", StringComparison.InvariantCulture);
-                if (ret > 0 && ret < lines[cnt].Length - 1)
+                int ret = lines[i].IndexOf(":", StringComparison.InvariantCulture);
+                if (ret > 0 && ret < lines[i].Length - 1)
                 {
                     try
                     {
-                        retdict.Add(lines[cnt].Substring(0, ret), lines[cnt].Substring(ret + 1).Trim());
+                        retdict.Add(lines[i].Substring(0, ret), lines[i].Substring(ret + 1).Trim());
                     }
                     catch (Exception e)
                     {
@@ -258,10 +133,11 @@ namespace Ap.Proxy.Http
                     }
                 }
             }
+
             return retdict;
         }
 
-        private void SendBadRequest()
+        private Task SendBadRequest()
         {
             var brs = new StringBuilder();
               brs.Append("HTTP/1.1 400 Bad Request\r\nConnection: close\r\nContent-Type: text/html\r\n\r\n");
@@ -279,7 +155,7 @@ namespace Ap.Proxy.Http
               brs.Append("</td></tr></table>");
               brs.Append("</div></body>");
               brs.Append("</html>");
-            _clientSocket.WriteAsync(Encoding.UTF8.GetBytes(brs.ToString())).ContinueWith(_ => Dispose());
+            return _bridge.WriteToAsync(Encoding.ASCII.GetBytes(brs.ToString())).ContinueWith(_ => Dispose());
         }
     }
 }

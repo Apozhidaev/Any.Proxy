@@ -5,7 +5,11 @@ namespace Ap.Proxy
 {
     public interface IBridge : IDisposable
     {
-        Task HandshakeAsync();
+        bool Connected { get; }
+
+        Task HandshakeAsync(string connectionId, string host, int port);
+
+        Task<byte[]> ReadToAsync(Func<string, bool> end);
 
         Task RelayAsync();
 
@@ -13,6 +17,10 @@ namespace Ap.Proxy
 
         Task RelayFromAsync();
 
-        Task WriteAsync(byte[] bytes);
+        Task RelayFromAsync(Func<string, bool> end);
+
+        Task WriteFromAsync(byte[] bytes);
+
+        Task WriteToAsync(byte[] bytes);
     }
 }
