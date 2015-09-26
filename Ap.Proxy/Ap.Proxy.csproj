@@ -31,7 +31,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Ap.Log">
-      <HintPath>..\packages\Ap.Log.1.0.0\lib\Ap.Log.dll</HintPath>
+      <HintPath>..\packages\Ap.Log.1.0.1\lib\Ap.Log.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
