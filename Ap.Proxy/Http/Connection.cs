@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Ap.Logs;
@@ -13,6 +12,9 @@ namespace Ap.Proxy.Http
         private readonly Action<Connection> _destroyer;
         private readonly IBridge _bridge;
         private readonly string _id;
+        private ConnectionType _type = ConnectionType.None;
+        private string _host;
+        private int _port;
 
         public Connection(IBridge bridge, Action<Connection> destroyer)
         {
@@ -31,9 +33,41 @@ namespace Ap.Proxy.Http
 
         public void Open()
         {
-            _bridge.ReadToAsync(IsValidRequest).ContinueWith(__ =>
+            _bridge.ReadToAsync(IsValidRequest).ContinueWith(_ =>
             {
-                ProcessRequest(__.Result);
+                Init(_.Result);
+                try
+                {
+                    _bridge.HandshakeAsync(_id, _host, _port).ContinueWith(__ =>
+                    {
+                        if (__.Exception != null)
+                        {
+                            SendBadRequest().ContinueWith(___ => Dispose());
+                            return;
+                        }
+                        if (_type == ConnectionType.Http)
+                        {
+                            _bridge.WriteFromAsync(_.Result)
+                                .ContinueWith(___ => _bridge.RelayFromAsync(IsValidResponse)
+                                    .ContinueWith(____ => Dispose()));
+                        }
+                        else if (_type == ConnectionType.Https)
+                        {
+                            string rq = "HTTP/1.1 200 Connection established\r\nProxy-Agent: Ap.Proxy\r\n\r\n";
+                            _bridge.WriteToAsync(Encoding.ASCII.GetBytes(rq))
+                                .ContinueWith(___ => _bridge.RelayAsync().ContinueWith(____ => Dispose()));
+                        }
+                        else
+                        {
+                            SendBadRequest().ContinueWith(___ => Dispose());
+                        }
+                        
+                    });
+                }
+                catch
+                {
+                    SendBadRequest().ContinueWith(__ => Dispose());
+                }
             });
         }
 
@@ -68,7 +102,7 @@ namespace Ap.Proxy.Http
                 int length = int.Parse(headerFields["Content-Length"]);
                 return query.Length >= index + 4 + length;
             }
-            if(headerFields.ContainsKey("Transfer-Encoding") && headerFields["Transfer-Encoding"] == "chunked")
+            if(headerFields.ContainsKey("Transfer-Encoding") && headerFields["Transfer-Encoding"] == "chunked" && query.Length > 4)
             {
                 var temp = query.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
                 return temp[temp.Length - 1] == "0";
@@ -76,64 +110,54 @@ namespace Ap.Proxy.Http
             return true;
         }
 
-        private void ProcessRequest(byte[] bytes)
+        private void Init(byte[] bytes)
         {
             var query = Encoding.ASCII.GetString(bytes);
             var headerFields = ParseHeaders(query);
             if (headerFields == null || !headerFields.ContainsKey("Host"))
             {
-                Log.Out.Error(_id, "ProcessRequest");
-                SendBadRequest();
+                Log.Out.Error(_id, "Init.Host");
                 return;
             }
-            int port;
-            string host;
-            int ret = headerFields["Host"].IndexOf(":", StringComparison.Ordinal);
+            var ret = query.IndexOf(" ", StringComparison.InvariantCulture);
+            var method = query.Substring(0, ret).ToUpper();
+            _type = method == "CONNECT" ? ConnectionType.Https : ConnectionType.Http;
+            ret = headerFields["Host"].IndexOf(":", StringComparison.Ordinal);
             if (ret > 0)
             {
-                host = headerFields["Host"].Substring(0, ret);
-                port = int.Parse(headerFields["Host"].Substring(ret + 1));
+                _host = headerFields["Host"].Substring(0, ret);
+                _port = int.Parse(headerFields["Host"].Substring(ret + 1));
             }
             else
             {
-                host = headerFields["Host"];
-                port = 80;
+                _host = headerFields["Host"];
+                _port = _type == ConnectionType.Https ? 443 : 80;
             }
-            Log.Out.Info(_id, query, host);
-            _bridge.HandshakeAsync(_id, host, port).ContinueWith(_ =>
-            {
-                if (_.Exception != null)
-                {
-                    Log.Out.Error(_.Exception, _id, "ProcessRequest.HandshakeAsync");
-                    SendBadRequest();
-                    return;
-                }
-                _bridge.WriteFromAsync(bytes)
-                        .ContinueWith(__ => _bridge.RelayFromAsync(IsValidResponse)
-                        .ContinueWith(____ => Dispose()));
-            });
+            Log.Out.Info(_id, query, _host);
         }
 
         private Dictionary<string, string> ParseHeaders(string query)
         {
             var retdict = new Dictionary<string, string>();
-            string[] lines = query.Split(new [] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries)[0].Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
-            for (int i = 1; i < lines.Length; i++)
+            if (!String.IsNullOrEmpty(query))
             {
-                int ret = lines[i].IndexOf(":", StringComparison.InvariantCulture);
-                if (ret > 0 && ret < lines[i].Length - 1)
+                string[] lines = query.Split(new[] { "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries)[0].Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+                for (int i = 1; i < lines.Length; i++)
                 {
-                    try
+                    int ret = lines[i].IndexOf(":", StringComparison.InvariantCulture);
+                    if (ret > 0 && ret < lines[i].Length - 1)
                     {
-                        retdict.Add(lines[i].Substring(0, ret), lines[i].Substring(ret + 1).Trim());
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Out.Error(e, _id, "ParseQuery");
+                        try
+                        {
+                            retdict.Add(lines[i].Substring(0, ret), lines[i].Substring(ret + 1).Trim());
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Out.Error(e, _id, "ParseQuery");
+                        }
                     }
                 }
             }
-
             return retdict;
         }
 
@@ -155,7 +179,7 @@ namespace Ap.Proxy.Http
               brs.Append("</td></tr></table>");
               brs.Append("</div></body>");
               brs.Append("</html>");
-            return _bridge.WriteToAsync(Encoding.ASCII.GetBytes(brs.ToString())).ContinueWith(_ => Dispose());
+            return _bridge.WriteToAsync(Encoding.ASCII.GetBytes(brs.ToString()));
         }
     }
 }

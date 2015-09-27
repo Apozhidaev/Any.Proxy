@@ -3,22 +3,15 @@
   <!--<portMap>
     <module name="test" fromHost="localhost" fromPort="52271" toHost="localhost" toPort="1923" />
   </portMap>-->
-  <!--<http>
+  <http>
     <module name="test" host="localhost" port="50001" />
-  </http>-->
-  <!--<https>
-    <module name="test" host="localhost" port="50002" />
-  </https>-->
-  <httpAgent>
+    <!--<module name="test2" host="localhost" port="50002" />-->
+  </http>
+  <!--<httpAgent>
     <module name="test" host="localhost" port="50001">
       <httpBridge url="http://hashabc.com/" useProxy="false" proxy="inet-proxy-b.sputnik.loadb.ubs.net:8085" useDefaultCredentials="true" userName="" password="" />
     </module>
-  </httpAgent>
-  <httpsAgent>
-    <module name="test" host="localhost" port="50002">
-      <httpBridge url="http://hashabc.com/" useProxy="false" proxy="inet-proxy-b.sputnik.loadb.ubs.net:8085" useDefaultCredentials="true" userName="" password="" />
-    </module>
-  </httpsAgent>
+  </httpAgent>-->
   <!--<httpBridgeService>
     <module name="test" prefixes="http://localhost:50003/" />
   </httpBridgeService>-->

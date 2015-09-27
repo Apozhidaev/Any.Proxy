@@ -6,8 +6,6 @@ using Ap.Proxy.Configuration;
 using Ap.Proxy.Http;
 using Ap.Proxy.HttpAgent;
 using Ap.Proxy.HttpBridgeService;
-using Ap.Proxy.Https;
-using Ap.Proxy.HttpsAgent;
 using Ap.Proxy.Loggers;
 using Ap.Proxy.PortMap;
 using Ap.Proxy.Redirect;
@@ -36,25 +34,11 @@ namespace Ap.Proxy
                     _listeners.Add($"Http-{config.Name}", new HttpModule(config));
                 }
             }
-            if (configuration.Https != null)
-            {
-                foreach (var config in configuration.Https)
-                {
-                    _listeners.Add($"Https-{config.Name}", new HttpsModule(config));
-                }
-            }
             if (configuration.HttpAgent != null)
             {
                 foreach (var config in configuration.HttpAgent)
                 {
                     _listeners.Add($"HttpAgent-{config.Name}", new HttpAgentModule(config));
-                }
-            }
-            if (configuration.HttpsAgent != null)
-            {
-                foreach (var config in configuration.HttpsAgent)
-                {
-                    _listeners.Add($"HttpsAgent-{config.Name}", new HttpsAgentModule(config));
                 }
             }
             if (configuration.HttpBridgeService != null)

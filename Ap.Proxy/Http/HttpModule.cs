@@ -1,3 +1,4 @@
+using System;
 using System.Net.Sockets;
 using Ap.Proxy.Http.Configuration;
 
@@ -14,7 +15,14 @@ namespace Ap.Proxy.Http
         {
             var connection = new Connection(new TcpBridge(client), RemoveConnection);
             AddConnection(connection);
-            connection.Open();
+            try
+            {
+                connection.Open();
+            }
+            catch
+            {
+
+            }
         }
     }
 }

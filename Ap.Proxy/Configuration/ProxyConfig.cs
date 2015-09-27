@@ -2,8 +2,6 @@
 using Ap.Proxy.Http.Configuration;
 using Ap.Proxy.HttpAgent.Configuration;
 using Ap.Proxy.HttpBridgeService.Configuration;
-using Ap.Proxy.Https.Configuration;
-using Ap.Proxy.HttpsAgent.Configuration;
 using Ap.Proxy.PortMap.Configuration;
 using Ap.Proxy.Redirect.Configuration;
 
@@ -25,17 +23,9 @@ namespace Ap.Proxy.Configuration
         [XmlArrayItem("module")]
         public HttpConfig[] Http { get; set; }
 
-        [XmlArray("https")]
-        [XmlArrayItem("module")]
-        public HttpsConfig[] Https { get; set; }
-
         [XmlArray("httpAgent")]
         [XmlArrayItem("module")]
         public HttpAgentConfig[] HttpAgent { get; set; }
-
-        [XmlArray("httpsAgent")]
-        [XmlArrayItem("module")]
-        public HttpsAgentConfig[] HttpsAgent { get; set; }
 
         [XmlArray("httpBridgeService")]
         [XmlArrayItem("module")]
@@ -59,36 +49,9 @@ namespace Ap.Proxy.Configuration
                         Port = 50001
                     }
                 },
-                Https = new[]
-                {
-                    new HttpsConfig
-                    {
-                        Name = "test",
-                        Host = "",
-                        Port = 50001
-                    }
-                },
                 HttpAgent = new[]
                 {
                     new HttpAgentConfig
-                    {
-                        Name = "test",
-                        Host = "",
-                        Port = 50001,
-                        HttpBridge = new HttpBridgeConfig
-                        {
-                            Url = "http://hashabc.com/",
-                            UseProxy = false,
-                            Proxy = "inet-proxy-b.sputnik.loadb.ubs.net:8085",
-                            UseDefaultCredentials = true,
-                            UserName = "",
-                            Password = "",
-                        }
-                    }
-                },
-                HttpsAgent = new[]
-                {
-                    new HttpsAgentConfig
                     {
                         Name = "test",
                         Host = "",
