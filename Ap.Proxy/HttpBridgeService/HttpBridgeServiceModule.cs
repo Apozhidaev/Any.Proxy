@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Ap.Logs;
 using Ap.Proxy.HttpBridgeService.Configuration;
@@ -12,6 +15,7 @@ namespace Ap.Proxy.HttpBridgeService
     public class HttpBridgeServiceModule : IProxyModule
     {
         private readonly HttpListener _listener;
+        private Timer _timer;
 
         public HttpBridgeServiceModule(HttpBridgeServiceConfig config)
         {
@@ -26,6 +30,8 @@ namespace Ap.Proxy.HttpBridgeService
         public async void Start()
         {
             _listener.Start();
+            _timer = new Timer(_ => Check());
+            _timer.Change(1000, 1000);
             while (true)
             {
                 try
@@ -43,9 +49,25 @@ namespace Ap.Proxy.HttpBridgeService
             }
         }
 
+        private void Check()
+        {
+            lock (_connections)
+            {
+                foreach (var connection in _connections.Where(connection => connection.Value.Expired).ToList())
+                {
+                    connection.Value.Dispose();
+                    _connections.Remove(connection.Key);
+                }
+            }
+#if DEBUG
+            Console.WriteLine($"r_{_connections.Count}");
+#endif
+        }
+
         public void Dispose()
         {
             _listener.Stop();
+            _timer?.Dispose();
         }
 
         public void Stop()
@@ -60,14 +82,17 @@ namespace Ap.Proxy.HttpBridgeService
             {
                 switch (context.Request.QueryString["a"])
                 {
-                    case "hc":
+                    case "c":
                         await HttpConnect(context);
                         break;
-                    case "hr":
+                    case "r":
                         await HttpReceive(context);
                         break;
-                    case "hs":
+                    case "s":
                         await HttpSend(context);
+                        break;
+                    case "p":
+                        HttpPing(context);
                         break;
                     default:
                         CreateResponse(context.Response, HttpStatusCode.BadRequest, String.Empty);
@@ -86,7 +111,7 @@ namespace Ap.Proxy.HttpBridgeService
             string[] sp = httpRequest.Split(':');
             var connectionId = sp[0];
             Log.Out.BeginInfo(connectionId, context.Request.Headers.ToString(), "HttpConnect host: {0}, port: {1}", sp[1], sp[2]);
-            RemoteConnection connection = RemoteConnection.Open(connectionId, sp[1], Int32.Parse(sp[2]));
+            RemoteConnection connection = Open(connectionId, sp[1], Int32.Parse(sp[2]));
             await connection.HandshakeAsync();
             CreateResponse(context.Response, HttpStatusCode.OK, connectionId);
             Log.Out.EndInfo(connectionId, "", "HttpConnect host: {0}, port: {1}", sp[1], sp[2]);
@@ -96,7 +121,7 @@ namespace Ap.Proxy.HttpBridgeService
         {
             string connectionId = ReadAsString(context.Request);
             Log.Out.BeginInfo(connectionId, context.Request.Headers.ToString(), "HttpReceive");
-            RemoteConnection connection = RemoteConnection.Find(connectionId);
+            RemoteConnection connection = Find(connectionId);
             if (connection == null)
             {
                 CreateResponse(context.Response, HttpStatusCode.BadRequest, connectionId);
@@ -122,7 +147,7 @@ namespace Ap.Proxy.HttpBridgeService
             string connectionId = sp[0];
             Log.Out.BeginInfo(connectionId, context.Request.Headers.ToString(), "HttpSend");
             byte[] httpResponse = Convert.FromBase64String(sp[1]);
-            RemoteConnection connection = RemoteConnection.Find(connectionId);
+            RemoteConnection connection = Find(connectionId);
             if (connection == null)
             {
                 CreateResponse(context.Response, HttpStatusCode.BadRequest, connectionId);
@@ -132,6 +157,13 @@ namespace Ap.Proxy.HttpBridgeService
             await connection.WriteAsync(httpResponse);
             CreateResponse(context.Response, HttpStatusCode.OK, connectionId);
             Log.Out.EndInfo(connectionId, "", "HttpSend length == {0}", httpResponse.Length);
+        }
+
+        private void HttpPing(HttpListenerContext context)
+        {
+            string connectionId = ReadAsString(context.Request);
+            var connection = Find(connectionId);
+            CreateResponse(context.Response, connection != null ? HttpStatusCode.OK : HttpStatusCode.NotFound, connectionId);
         }
 
         private string ReadAsString(HttpListenerRequest context)
@@ -188,6 +220,32 @@ namespace Ap.Proxy.HttpBridgeService
                 {
                     Log.Out.Error(eAbort, connectionId, "context.Abort()");
                 }
+            }
+        }
+
+
+        private readonly Dictionary<string, RemoteConnection> _connections =
+            new Dictionary<string, RemoteConnection>();
+
+        private RemoteConnection Open(string connectionId, string host, int port)
+        {
+            var connection = new RemoteConnection(connectionId, host, port);
+            lock (_connections)
+            {
+                _connections.Add(connection.Id, connection);
+            }
+            return connection;
+        }
+
+        private RemoteConnection Find(string id)
+        {
+            lock (_connections)
+            {
+                if (_connections.ContainsKey(id))
+                {
+                    return _connections[id];
+                }
+                return null;
             }
         }
     }

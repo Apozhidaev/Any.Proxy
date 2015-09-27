@@ -10,68 +10,43 @@ namespace Ap.Proxy.HttpBridgeService
 {
     public class RemoteConnection : IDisposable
     {
-        private const int Threshold = 100;
-
-        private static readonly Dictionary<string, RemoteConnection> Connections =
-            new Dictionary<string, RemoteConnection>();
-
-        public static RemoteConnection Open(string connectionId, string host, int port)
-        {
-            var connection = new RemoteConnection(connectionId, host, port);
-            lock (Connections)
-            {
-                if (Connections.Count > Threshold)
-                {
-                    DateTime expDate = DateTime.Now.AddMinutes(-10);
-                    IEnumerable<string> removeKeys =
-                        Connections.Where(c => c.Value._lastActive < expDate).Select(c => c.Key);
-                    foreach (string removeKey in removeKeys)
-                    {
-                        Connections[removeKey].Dispose();
-                        Connections.Remove(removeKey);
-                    }
-                }
-                Connections.Add(connection.Id, connection);
-            }
-            return connection;
-        }
-
-        public static RemoteConnection Find(string id)
-        {
-            lock (Connections)
-            {
-                if (Connections.ContainsKey(id))
-                {
-                    return Connections[id];
-                }
-                return null;
-            }
-        }
-
-
         private readonly TcpClient _server;
         private NetworkStream _serverNetwork;
-        private DateTime _lastActive = DateTime.Now;
-        private readonly string _id;
         private readonly string _host;
         private readonly int _port;
+        private bool _opened;
 
-        private RemoteConnection(string connectionId, string host, int port)
+        public RemoteConnection(string connectionId, string host, int port)
         {
             _server = new TcpClient();
-            _id = connectionId;
+            Id = connectionId;
             _host = host;
             _port = port;
         }
 
-        public string Id => _id;
+        public string Id { get; }
+
+        public DateTime LastActivity { get; private set; } = DateTime.UtcNow;
+
+        public bool Expired
+        {
+            get
+            {
+                if (_opened)
+                {
+                    return LastActivity < DateTime.UtcNow.AddMilliseconds(-5000) || !_server.Connected;
+                }
+                return LastActivity < DateTime.UtcNow.AddSeconds(-30);
+            }
+        }
 
         public Task<string> HandshakeAsync()
         {
-            _lastActive = DateTime.Now;
+            _activity();
             var tcsHandshake = new TaskCompletionSource<string>();
             _server.ConnectAsync(_host, _port).ContinueWith(__ =>
             {
+                _opened = true;
                 if (__.Exception != null)
                 {
                     Log.Out.Error(__.Exception, Id, "HandshakeAsync");
@@ -88,13 +63,13 @@ namespace Ap.Proxy.HttpBridgeService
 
         public Task WriteAsync(byte[] bytes)
         {
-            _lastActive = DateTime.Now;
+            _activity();
             return _serverNetwork.WriteAsync(bytes, 0, bytes.Length);
         }
 
         public async Task<byte[]> ReadAsync()
         {
-            _lastActive = DateTime.Now;
+            _activity();
             var buffer = new byte[1024 * 1024];
             var count = await _serverNetwork.ReadAsync(buffer, 0, buffer.Length);
             var res = new byte[count];
@@ -104,12 +79,13 @@ namespace Ap.Proxy.HttpBridgeService
 
         public void Dispose()
         {
-            lock (Connections)
-            {
-                Connections.Remove(Id);
-            }
             _serverNetwork?.Close();
             _server?.Close();
+        }
+
+        private void _activity()
+        {
+            LastActivity = DateTime.UtcNow;
         }
     }
 }

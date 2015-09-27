@@ -16,7 +16,6 @@ namespace Ap.Proxy
         private NetworkStream _serverNetwork;
         private readonly NetworkStream _clientNetwork;
 
-
         public TcpBridge(TcpClient client)
         {
             _client = client;
@@ -25,6 +24,8 @@ namespace Ap.Proxy
         }
 
         public bool Connected => _client.Connected && _server.Connected;
+
+        public DateTime LastActivity { get; private set; } = DateTime.UtcNow;
 
         public void Dispose()
         {
@@ -36,9 +37,11 @@ namespace Ap.Proxy
 
         public Task HandshakeAsync(string connectionId, string host, int port)
         {
+            _activity();
             var tcsHandshake = new TaskCompletionSource<int>();
             _server.ConnectAsync(host, port).ContinueWith(__ =>
             {
+                _activity();
                 if (__.Exception != null)
                 {
                     Log.Out.Error(__.Exception, connectionId, "HandshakeAsync");
@@ -60,10 +63,11 @@ namespace Ap.Proxy
             var buffer = new byte[1024*1024];
             do
             {
+                _activity();
                 var count = await _clientNetwork.ReadAsync(buffer, 0, buffer.Length);
                 res.AddRange(buffer.Take(count));
                 query += Encoding.ASCII.GetString(buffer, 0, count);
-            } while (Connected && !end(query));
+            } while (_client.Connected && !end(query));
             return res.ToArray();
         }
 
@@ -73,6 +77,7 @@ namespace Ap.Proxy
             var buffer = new byte[1024*1024];
             do
             {
+                _activity();
                 var count = await _serverNetwork.ReadAsync(buffer, 0, buffer.Length);
                 await _clientNetwork.WriteAsync(buffer, 0, count);
                 query += Encoding.ASCII.GetString(buffer, 0, count);
@@ -84,6 +89,7 @@ namespace Ap.Proxy
             var buffer = new byte[1024 * 1024];
             while (Connected)
             {
+                _activity();
                 var count = await _serverNetwork.ReadAsync(buffer, 0, buffer.Length);
                 await _clientNetwork.WriteAsync(buffer, 0, count);
             }
@@ -91,6 +97,7 @@ namespace Ap.Proxy
 
         public Task RelayAsync()
         {
+            _activity();
             return Task.WhenAll(RelayFromAsync(), RelayToAsync());
         }
 
@@ -99,6 +106,7 @@ namespace Ap.Proxy
             var buffer = new byte[1024 * 1024];
             while (Connected)
             {
+                _activity();
                 var count = await _clientNetwork.ReadAsync(buffer, 0, buffer.Length);
                 await _serverNetwork.WriteAsync(buffer, 0, count);
             }
@@ -106,12 +114,24 @@ namespace Ap.Proxy
 
         public Task WriteFromAsync(byte[] bytes)
         {
+            _activity();
             return _serverNetwork.WriteAsync(bytes, 0, bytes.Length);
         }
 
         public Task WriteToAsync(byte[] bytes)
         {
+            _activity();
             return _clientNetwork.WriteAsync(bytes, 0, bytes.Length);
+        }
+
+        public Task<bool> Ping()
+        {
+            return Task.Run(() => Connected);
+        }
+
+        private void _activity()
+        {
+            LastActivity = DateTime.UtcNow;
         }
     }
 }

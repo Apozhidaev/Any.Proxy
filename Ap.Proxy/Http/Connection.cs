@@ -9,26 +9,40 @@ namespace Ap.Proxy.Http
 {
     public class Connection : IDisposable
     {
-        private readonly Action<Connection> _destroyer;
         private readonly IBridge _bridge;
-        private readonly string _id;
         private ConnectionType _type = ConnectionType.None;
         private string _host;
         private int _port;
+        private bool _opened;
 
-        public Connection(IBridge bridge, Action<Connection> destroyer)
+        public Connection(IBridge bridge)
         {
             _bridge = bridge;
-            _destroyer = destroyer;
-            _id = Guid.NewGuid().ToString();
+            Id = Guid.NewGuid().ToString();
         }
 
-        public string Id => _id;
+        public string Id { get; }
+
+        public bool Expired
+        {
+            get
+            {
+                if (_opened)
+                {
+                    return _bridge.LastActivity < DateTime.UtcNow.AddMilliseconds(-5000) || !_bridge.Connected;
+                }
+                return _bridge.LastActivity < DateTime.UtcNow.AddSeconds(-30);
+            }
+        }
+
+        public Task<bool> Ping()
+        {
+            return _bridge.Ping();
+        } 
 
         public void Dispose()
         {
-            _bridge?.Dispose();
-            _destroyer(this);
+            _bridge.Dispose();
         }
 
         public void Open()
@@ -38,8 +52,9 @@ namespace Ap.Proxy.Http
                 Init(_.Result);
                 try
                 {
-                    _bridge.HandshakeAsync(_id, _host, _port).ContinueWith(__ =>
+                    _bridge.HandshakeAsync(Id, _host, _port).ContinueWith(__ =>
                     {
+                        _opened = true;
                         if (__.Exception != null)
                         {
                             SendBadRequest().ContinueWith(___ => Dispose());
@@ -73,6 +88,7 @@ namespace Ap.Proxy.Http
 
         private bool IsValidRequest(string query)
         {
+            if (String.IsNullOrEmpty(query)) return true;
             int index = query.IndexOf("\r\n\r\n", StringComparison.InvariantCulture);
             if (index == -1)
             {
@@ -116,7 +132,7 @@ namespace Ap.Proxy.Http
             var headerFields = ParseHeaders(query);
             if (headerFields == null || !headerFields.ContainsKey("Host"))
             {
-                Log.Out.Error(_id, "Init.Host");
+                Log.Out.Error(Id, "Init.Host");
                 return;
             }
             var ret = query.IndexOf(" ", StringComparison.InvariantCulture);
@@ -133,7 +149,7 @@ namespace Ap.Proxy.Http
                 _host = headerFields["Host"];
                 _port = _type == ConnectionType.Https ? 443 : 80;
             }
-            Log.Out.Info(_id, query, _host);
+            Log.Out.Info(Id, query, _host);
         }
 
         private Dictionary<string, string> ParseHeaders(string query)
@@ -153,7 +169,7 @@ namespace Ap.Proxy.Http
                         }
                         catch (Exception e)
                         {
-                            Log.Out.Error(e, _id, "ParseQuery");
+                            Log.Out.Error(e, Id, "ParseQuery");
                         }
                     }
                 }

@@ -1,4 +1,3 @@
-using System;
 using System.Net.Sockets;
 using Ap.Proxy.Http.Configuration;
 
@@ -13,16 +12,9 @@ namespace Ap.Proxy.Http
 
         protected override void OnAccept(TcpClient client)
         {
-            var connection = new Connection(new TcpBridge(client), RemoveConnection);
+            var connection = new Connection(new TcpBridge(client));
+            connection.Open();
             AddConnection(connection);
-            try
-            {
-                connection.Open();
-            }
-            catch
-            {
-
-            }
         }
     }
 }

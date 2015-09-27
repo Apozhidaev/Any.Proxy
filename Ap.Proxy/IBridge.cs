@@ -7,6 +7,8 @@ namespace Ap.Proxy
     {
         bool Connected { get; }
 
+        DateTime LastActivity { get; }
+
         Task HandshakeAsync(string connectionId, string host, int port);
 
         Task<byte[]> ReadToAsync(Func<string, bool> end);
@@ -22,5 +24,7 @@ namespace Ap.Proxy
         Task WriteFromAsync(byte[] bytes);
 
         Task WriteToAsync(byte[] bytes);
+
+        Task<bool> Ping();
     }
 }

@@ -1,4 +1,5 @@
 using System.Web.Http;
+using Ap.Express;
 using Newtonsoft.Json.Serialization;
 using Owin;
 
@@ -12,11 +13,7 @@ namespace Ap.Proxy.Api
 
             config.MapHttpAttributeRoutes();
 
-            config.Routes.MapHttpRoute(
-                name: "Api",
-                routeTemplate: "{controller}/{id}",
-                defaults: new { id = RouteParameter.Optional }
-            );
+            config.UseStatic(new ContentOptions("..\\..\\wwwroot").UseWeb());
 
             config.Formatters.JsonFormatter.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
 

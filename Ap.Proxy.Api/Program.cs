@@ -8,9 +8,9 @@ namespace Ap.Proxy.Api
         {
             HostFactory.Run(x =>
             {
-                x.Service<RemoteControl>(s =>
+                x.Service<App>(s =>
                 {
-                    s.ConstructUsing(name => new RemoteControl());
+                    s.ConstructUsing(name => new App());
                     s.WhenStarted(tc => tc.Start());
                     s.WhenStopped(tc => tc.Stop());
                 });

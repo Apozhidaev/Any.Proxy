@@ -30,8 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Ap.Log">
+    <Reference Include="Ap.Log, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\Ap.Log.1.0.1\lib\Ap.Log.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -70,7 +71,6 @@
     <Compile Include="Redirect\Configuration\RedirectConfig.cs" />
     <Compile Include="Redirect\Configuration\ReplaceConfig.cs" />
     <Compile Include="Redirect\RedirectModule.cs" />
-    <Compile Include="SocketExtentions.cs" />
     <Compile Include="TcpBridge.cs" />
     <Compile Include="XmlHelper.cs" />
   </ItemGroup>

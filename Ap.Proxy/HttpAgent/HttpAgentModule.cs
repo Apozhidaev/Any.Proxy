@@ -16,9 +16,21 @@ namespace Ap.Proxy.HttpAgent
 
         protected override void OnAccept(TcpClient client)
         {
-            var connection = new Connection(new HttpBridge(_config.HttpBridge, client), RemoveConnection);
-            AddConnection(connection);
+            var connection = new Connection(new HttpBridge(_config.HttpBridge, client));
             connection.Open();
+            AddConnection(connection);
+        }
+
+        protected override void Check()
+        {
+            lock (_connections)
+            {
+                foreach (var connection in _connections)
+                {
+                    connection.Ping();
+                }
+            }
+            base.Check();
         }
     }
 }

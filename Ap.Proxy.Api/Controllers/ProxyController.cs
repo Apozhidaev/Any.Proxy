@@ -4,17 +4,17 @@ using System.Web.Http;
 
 namespace Ap.Proxy.Api.Controllers
 {
-    [RoutePrefix("proxy")]
+    [RoutePrefix("api/proxy")]
     public class ProxyController : ApiController
     {
         [HttpGet]
         [Route("reboot")]
         public HttpResponseMessage Reboot(string p)
         {
-            if (RemoteControl.Password == p)
+            if (App.Password == p)
             {
-                RemoteControl.Proxy.Stop();
-                RemoteControl.Proxy.Start();
+                App.Proxy.Stop();
+                App.Proxy.Start();
                 return Request.CreateResponse(HttpStatusCode.OK);
             }
             return Request.CreateResponse(HttpStatusCode.Unauthorized);
@@ -24,9 +24,9 @@ namespace Ap.Proxy.Api.Controllers
         [Route("stop")]
         public HttpResponseMessage Stop(string p)
         {
-            if (RemoteControl.Password == p)
+            if (App.Password == p)
             {
-                RemoteControl.Proxy.Stop();
+                App.Proxy.Stop();
                 return Request.CreateResponse(HttpStatusCode.OK);
             }
             return Request.CreateResponse(HttpStatusCode.Unauthorized);

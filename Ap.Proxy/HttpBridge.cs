@@ -18,15 +18,18 @@ namespace Ap.Proxy
         private readonly Uri _connectUri;
         private readonly Uri _receiveUri;
         private readonly Uri _sendUri;
+        private readonly Uri _pingUri;
         private readonly HttpClient _httpClient;
+        private bool _ping;
 
         public HttpBridge(HttpBridgeConfig config, TcpClient client)
         {
             _client = client;
             _clientNetwork = _client.GetStream();
-            _connectUri = new Uri($"{config.Url}?a=hc");
-            _receiveUri = new Uri($"{config.Url}?a=hr");
-            _sendUri = new Uri($"{config.Url}?a=hs");
+            _connectUri = new Uri($"{config.Url}?a=c");
+            _receiveUri = new Uri($"{config.Url}?a=r");
+            _sendUri = new Uri($"{config.Url}?a=s");
+            _pingUri = new Uri($"{config.Url}?a=p");
 
             var handler = new HttpClientHandler { UseProxy = config.UseProxy };
             if(config.UseProxy)
@@ -48,13 +51,17 @@ namespace Ap.Proxy
             _httpClient = new HttpClient(handler);
         }
 
+        public DateTime LastActivity { get; private set; } = DateTime.UtcNow;
+
         public Task HandshakeAsync(string connectionId, string host, int port)
         {
-            _connectionId = connectionId;
+            _activity();
             var tcsHandshake = new TaskCompletionSource<int>();
             _httpClient.PostAsync(_connectUri, new StringContent($"{connectionId}:{host}:{port}"))
                 .ContinueWith(_ =>
                 {
+                    _ping = true;
+                    _connectionId = connectionId;
                     if (_.Exception != null)
                     {
                         tcsHandshake.SetException(_.Exception);
@@ -81,7 +88,7 @@ namespace Ap.Proxy
             _client.Close();
         }
 
-        public bool Connected => _client.Connected;
+        public bool Connected => _client.Connected && _ping;
 
         public async Task<byte[]> ReadToAsync(Func<string, bool> end)
         {
@@ -90,15 +97,17 @@ namespace Ap.Proxy
             var buffer = new byte[1024 * 1024];
             do
             {
+                _activity();
                 var count = await _clientNetwork.ReadAsync(buffer, 0, buffer.Length);
                 res.AddRange(buffer.Take(count));
                 query += Encoding.ASCII.GetString(buffer, 0, count);
-            } while (Connected && !end(query));
+            } while (_client.Connected && !end(query));
             return res.ToArray();
         }
 
         public Task RelayAsync()
         {
+            _activity();
             return Task.WhenAll(RelayFromAsync(), RelayToAsync());
         }
 
@@ -107,6 +116,7 @@ namespace Ap.Proxy
             var buffer = new byte[1024 * 1024];
             while (Connected)
             {
+                _activity();
                 var count = await _clientNetwork.ReadAsync(buffer, 0, buffer.Length);
                 var res = new byte[count];
                 Array.Copy(buffer, res, res.Length);
@@ -118,6 +128,7 @@ namespace Ap.Proxy
         {
             while (Connected)
             {
+                _activity();
                 var buffer = await RemoteReceive();
                 await _clientNetwork.WriteAsync(buffer, 0, buffer.Length);
             }
@@ -128,6 +139,7 @@ namespace Ap.Proxy
             var query = String.Empty;
             do
             {
+                _activity();
                 var buffer = await RemoteReceive();
                 await _clientNetwork.WriteAsync(buffer, 0, buffer.Length);
                 query += Encoding.ASCII.GetString(buffer, 0, buffer.Length);
@@ -136,6 +148,7 @@ namespace Ap.Proxy
 
         public Task WriteFromAsync(byte[] bytes)
         {
+            _activity();
             var tcsWrite = new TaskCompletionSource<int>();
             _httpClient.PostAsync(_sendUri, new StringContent(FormMessage(bytes))).ContinueWith(_ =>
             {
@@ -161,7 +174,16 @@ namespace Ap.Proxy
 
         public Task WriteToAsync(byte[] bytes)
         {
+            _activity();
             return _clientNetwork.WriteAsync(bytes, 0, bytes.Length);
+        }
+
+        public async Task<bool> Ping()
+        {
+            if (String.IsNullOrEmpty(_connectionId)) return true;
+            HttpResponseMessage response = await _httpClient.PostAsync(_pingUri, new StringContent(_connectionId));
+            _ping = response.StatusCode == HttpStatusCode.OK;
+            return _ping;
         }
 
         private string FormMessage(byte[] bytes)
@@ -184,6 +206,11 @@ namespace Ap.Proxy
         {
             HttpResponseMessage response = await _httpClient.PostAsync(_sendUri, new StringContent(FormMessage(bytes)));
             return response.StatusCode == HttpStatusCode.OK;
+        }
+
+        private void _activity()
+        {
+            LastActivity = DateTime.UtcNow;
         }
     }
 }
