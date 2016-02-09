@@ -68,9 +68,6 @@
     <Compile Include="PortMap\PortMapModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Proxy.cs" />
-    <Compile Include="Redirect\Configuration\RedirectConfig.cs" />
-    <Compile Include="Redirect\Configuration\ReplaceConfig.cs" />
-    <Compile Include="Redirect\RedirectModule.cs" />
     <Compile Include="TcpBridge.cs" />
     <Compile Include="XmlHelper.cs" />
   </ItemGroup>

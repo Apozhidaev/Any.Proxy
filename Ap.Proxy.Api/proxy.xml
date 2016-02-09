@@ -3,17 +3,17 @@
   <!--<portMap>
     <module name="test" fromHost="localhost" fromPort="52271" toHost="localhost" toPort="1923" />
   </portMap>-->
-  <!--<http>
+  <http>
     <module name="test" host="" port="50001" />
-  </http>-->
-  <httpAgent>
+  </http>
+  <!--<httpAgent>
     <module name="test" host="" port="50001">
       <httpBridge url="http://localhost:50003/" useProxy="false" proxy="inet-proxy-b.sputnik.loadb.ubs.net:8085" useDefaultCredentials="true" userName="" password="" />
     </module>
   </httpAgent>
   <httpBridgeService>
     <module name="dev" prefixes="http://localhost:50003/" />
-  </httpBridgeService>
+  </httpBridgeService>-->
   <!--<redirect>
     <module name="test" fromUrl="http://hashabc.com/" toUrl="http://habrahabr.ru/">
       <replace mediaType="text/html" oldValue="habrastorage.org" newValue="hashabc.com:50001" />

@@ -8,7 +8,6 @@ using Ap.Proxy.HttpAgent;
 using Ap.Proxy.HttpBridgeService;
 using Ap.Proxy.Loggers;
 using Ap.Proxy.PortMap;
-using Ap.Proxy.Redirect;
 
 namespace Ap.Proxy
 {
@@ -47,13 +46,6 @@ namespace Ap.Proxy
                 {
                     _listeners.Add($"HttpBridgeService-{config.Name}",
                         new HttpBridgeServiceModule(config));
-                }
-            }
-            if (configuration.Redirect != null)
-            {
-                foreach (var config in configuration.Redirect)
-                {
-                    _listeners.Add($"Redirect-{config.Name}", new RedirectModule(config));
                 }
             }
 

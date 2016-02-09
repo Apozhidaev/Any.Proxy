@@ -3,7 +3,6 @@ using Ap.Proxy.Http.Configuration;
 using Ap.Proxy.HttpAgent.Configuration;
 using Ap.Proxy.HttpBridgeService.Configuration;
 using Ap.Proxy.PortMap.Configuration;
-using Ap.Proxy.Redirect.Configuration;
 
 namespace Ap.Proxy.Configuration
 {
@@ -30,10 +29,6 @@ namespace Ap.Proxy.Configuration
         [XmlArray("httpBridgeService")]
         [XmlArrayItem("module")]
         public HttpBridgeServiceConfig[] HttpBridgeService { get; set; }
-
-        [XmlArray("redirect")]
-        [XmlArrayItem("module")]
-        public RedirectConfig[] Redirect { get; set; }
 
 
         public static void CreateTemplate()
@@ -84,36 +79,6 @@ namespace Ap.Proxy.Configuration
                         FromPort = 52271,
                         ToHost = "localhost",
                         ToPort = 1923
-                    }
-                },
-                Redirect = new[]
-                {
-                    new RedirectConfig
-                    {
-                        Name = "test",
-                        FromUrl = "http://hashabc.com/",
-                        ToUrl = "http://habrahabr.ru/",
-                        Replace = new[]
-                        {
-                            new ReplaceConfig
-                            {
-                                MediaType = "text/html",
-                                OldValue = "habrastorage.org",
-                                NewValue = "hashabc.com:50001"
-                            },
-                            new ReplaceConfig
-                            {
-                                MediaType = "text/html",
-                                OldValue = "http://habrahabr.ru",
-                                NewValue = "http://hashabc.com"
-                            }
-                        }
-                    },
-                    new RedirectConfig
-                    {
-                        Name = "test2",
-                        FromUrl = "http://hashabc.com:50001/",
-                        ToUrl = "http://habrastorage.org/"
                     }
                 }
             };
